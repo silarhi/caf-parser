@@ -1,0 +1,37 @@
+ CAISSE D'ALLOCATIONS FAMILIALES                                                                   NMFP PAGE :   1413
+ DE HAUTE GARONNE                                                                         DATE DE TRAITEMENT : 27 11 2021
+ 24 RUE PIERRE PAUL RIQUET                                                                 NUMERO DE PRODUIT :       LA44
+ 31046 TOULOUSE CEDEX 9                                                                   TYPE DE TRAITEMENT : DIE
+ TEL :   32 30
+
+
+
+
+
+
+                                                                      SCI SCITEST
+ NATURE DR: M  NM REFERENCE: 0111111 0002                             34 RUE DES ALOUETTES
+                                                                      81100 CASTRES
+
+
+
+
+
+
+
+                             -------------------------------------------------
+                             : BORDEREAU DE PAIEMENT A.L.  DU     25 11 2021 :
+                             -------------------------------------------------
+ REFERENCES BANCAIRES BAILLEUR
+ VB   CMCIFR2A      FR76 0000 0000 1111 2222 3333 444
+ -------------------------------------------------------------------------------------------------------------------------
+ :      REFERENCES      :   NUMERO  :       NOM DESTINATAIRE   : DATE    :  DATE   :  MONTANT   : RETENUE   :  MONTANT   :
+ :     LOGEMENT/PRET    :ALLOCATAIRE:                          : DEBUT   :  FIN    :    BRUT    :           :  NET       :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                      : 1111111 S : MR ABABABA JOHNNY        : 11 2021 : 11 2021 :      272,00:       0,00:     272,00 :
+ :                      : 2222222 L : MR ADADADA PHILIPPE      : 11 2021 : 11 2021 :       50,00:       0,00       50,00 :
+ :                      : 3333333 H : MR AFAFAFAFA MATHIEU     : 11 2021 : 11 2021 :      272,00:       0,00:     272,00 :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                                                                                               TOTAL :         1298,00 :
+ -------------------------------------------------------------------------------------------------------------------------
+

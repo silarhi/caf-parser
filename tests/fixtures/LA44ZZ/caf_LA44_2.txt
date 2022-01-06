@@ -1,0 +1,35 @@
+ CAISSE D'ALLOCATIONS FAMILIALES                                                                   NMFP PAGE :    243
+ DE HAUTE GARONNE                                                                         DATE DE TRAITEMENT : 10 02 2021
+ 24 RUE PIERRE PAUL RIQUET                                                                 NUMERO DE PRODUIT :       LA44
+ 31046 TOULOUSE CEDEX 9                                                                   TYPE DE TRAITEMENT : DIE
+ TEL :   32 30
+
+
+
+
+
+
+                                                                      NOSELI
+ NATURE DR: M  NM REFERENCE: 0326061 0001                             34 RUE DES TEINTURIERS
+                                                                      31300 TOULOUSE
+
+
+
+
+
+
+
+                             -------------------------------------------------
+                             : BORDEREAU DE PAIEMENT A.L.  DU     09 02 2021 :
+                             -------------------------------------------------
+ REFERENCES BANCAIRES BAILLEUR
+ VB   CMCIFR2A      FR76 1027 8022 0400 5555 5555 555
+ -------------------------------------------------------------------------------------------------------------------------
+ :      REFERENCES      :   NUMERO  :       NOM DESTINATAIRE   : DATE    :  DATE   :  MONTANT   : RETENUE   :  MONTANT   :
+ :     LOGEMENT/PRET    :ALLOCATAIRE:                          : DEBUT   :  FIN    :    BRUT    :           :  NET       :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                      : 1986666 J : MME JESUS DE ALMEIDA ELZ : 01 2021 : 01 2021 :       33,00:       0,00:      33,00 :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                                                                                               TOTAL :           33,00 :
+ -------------------------------------------------------------------------------------------------------------------------
+
