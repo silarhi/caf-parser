@@ -1,6 +1,6 @@
 # caf-parser
 
-![Build Status](https://github.com/silarhi/caf-parser/workflows/continuous-integration.yml/badge.svg)
+![Build Status](https://github.com/silarhi/caf-parser/actions/workflows/continuous-integration.yml/badge.svg)
 [![Latest Stable Version](https://poser.pugx.org/silarhi/caf-parser/v/stable)](https://packagist.org/packages/silarhi/caf-parser)
 [![Total Downloads](https://poser.pugx.org/silarhi/caf-parser/downloads)](https://packagist.org/packages/silarhi/caf-parser)
 [![License](https://poser.pugx.org/silarhi/caf-parser/license)](https://packagist.org/packages/silarhi/caf-parser)
