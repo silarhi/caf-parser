@@ -53,8 +53,6 @@ class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotNull($result);
-
-        //@TODO test parsed rows & line values
     }
 
     public function testParsing2(): void
@@ -64,8 +62,6 @@ class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotNull($result);
-
-        //@TODO test parsed rows & line values
     }
 
     public function testParsing3(): void
@@ -75,7 +71,5 @@ class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotNull($result);
-
-        //@TODO test parsed rows & line values
     }
 }
