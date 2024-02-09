@@ -19,7 +19,7 @@ use Silarhi\Caf\Parser\PaymentSlipParser;
 
 class PaymentSlipParserTest extends TestCase
 {
-    public function testEmptyInput()
+    public function testEmptyInput(): void
     {
         $this->expectException(ParseException::class);
 
@@ -27,7 +27,7 @@ class PaymentSlipParserTest extends TestCase
         $parser->parse('');
     }
 
-    public function testUnexpectedInput()
+    public function testUnexpectedInput(): void
     {
         $this->expectException(ParseException::class);
 
@@ -35,37 +35,45 @@ class PaymentSlipParserTest extends TestCase
         $parser->parse('Lorem ipsum dolor sit amet');
     }
 
-    public function testUnparseable2ndCafRow()
+    public function testUnparseable2ndCafRow(): void
     {
         $this->expectException(ParseException::class);
         $this->expectExceptionMessageMatches('/^CAF Row n°2 could not be parsed$/');
 
         $parser = new PaymentSlipParser();
-        $parser->parse(file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_unparseable_2nd_row.txt'));
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_unparseable_2nd_row.txt');
+        $this->assertNotFalse($content);
+        $parser->parse($content);
     }
 
-    public function testParsing()
+    public function testParsing(): void
     {
         $parser = new PaymentSlipParser();
-        $result = $parser->parse(file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt'));
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
+        $this->assertNotFalse($content);
+        $result = $parser->parse($content);
         $this->assertNotNull($result);
 
         //@TODO test parsed rows & line values
     }
 
-    public function testParsing2()
+    public function testParsing2(): void
     {
         $parser = new PaymentSlipParser();
-        $result = $parser->parse(file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt'));
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt');
+        $this->assertNotFalse($content);
+        $result = $parser->parse($content);
         $this->assertNotNull($result);
 
         //@TODO test parsed rows & line values
     }
 
-    public function testParsing3()
+    public function testParsing3(): void
     {
         $parser = new PaymentSlipParser();
-        $result = $parser->parse(file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_3.txt'));
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_3.txt');
+        $this->assertNotFalse($content);
+        $result = $parser->parse($content);
         $this->assertNotNull($result);
 
         //@TODO test parsed rows & line values
