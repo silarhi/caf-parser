@@ -25,7 +25,7 @@ return static function (RectorConfig $rectorConfig): void {
     $rectorConfig->importShortClasses();
 
     $rectorConfig->sets([
-        LevelSetList::UP_TO_PHP_72,
+        LevelSetList::UP_TO_PHP_80,
         PHPUnitSetList::PHPUNIT_90,
     ]);
 };
