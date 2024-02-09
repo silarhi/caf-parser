@@ -1,5 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the CAF Parser package.
+ *
+ * (c) SILARHI <dev@silarhi.fr>
+ *
+ * This source file is subject to the MIT license that is bundled
+ * with this source code in the file LICENSE.
+ */
+
 $header = <<<'EOF'
 This file is part of the CAF Parser package.
 
@@ -11,8 +22,8 @@ EOF;
 
 $finder = PhpCsFixer\Finder::create()
     ->in([
-        __DIR__.'/src',
-        __DIR__.'/tests',
+        __DIR__ . '/src',
+        __DIR__ . '/tests',
     ])
     ->append([
         __FILE__,
@@ -20,6 +31,7 @@ $finder = PhpCsFixer\Finder::create()
     ]);
 
 $config = new PhpCsFixer\Config();
+
 return $config
     ->setRules([
         '@Symfony' => true,

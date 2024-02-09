@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Silarhi\Caf\Parser;
 
 use function count;
+
 use DateTime;
 use DateTimeInterface;
 use Silarhi\Caf\Exceptions\ParseException;
@@ -38,7 +39,7 @@ class PaymentSlipParser
             throw new ParseException('Input CAF LA44 could not be parsed');
         }
 
-        //Normalize Carriage return before splitting
+        // Normalize Carriage return before splitting
         $tableContent = str_replace("\r\n", "\n", $matches[0][1]);
 
         $paymentSlip = new PaymentSlip();
