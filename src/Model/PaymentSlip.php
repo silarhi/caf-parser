@@ -16,7 +16,7 @@ namespace Silarhi\Caf\Model;
 class PaymentSlip
 {
     /** @var PaymentSlipLine[] */
-    private $lines = [];
+    private array $lines = [];
 
     public function addLine(PaymentSlipLine $line): self
     {

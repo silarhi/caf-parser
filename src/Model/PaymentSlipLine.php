@@ -17,29 +17,21 @@ use DateTimeInterface;
 
 class PaymentSlipLine
 {
-    /** @var string|null */
-    private $reference;
+    private ?string $reference;
 
-    /** @var string */
-    private $beneficiaryReference;
+    private string $beneficiaryReference;
 
-    /** @var string */
-    private $beneficiaryName;
+    private string $beneficiaryName;
 
-    /** @var DateTimeInterface */
-    private $startDate;
+    private DateTimeInterface $startDate;
 
-    /** @var DateTimeInterface */
-    private $endDate;
+    private DateTimeInterface $endDate;
 
-    /** @var float */
-    private $grossAmount;
+    private float $grossAmount;
 
-    /** @var float */
-    private $deduction;
+    private float $deduction;
 
-    /** @var float */
-    private $netAmount;
+    private float $netAmount;
 
     public function getReference(): ?string
     {

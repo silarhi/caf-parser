@@ -35,6 +35,6 @@ $paymentSlip = $parser->parse('My Content');
 foreach($paymentSlip->getLines() as $line) {
   assert($line instanceof \Silarhi\Caf\Model\PaymentSlipLine);
 }
-``` 
+```
 
 [composer]: http://getcomposer.org/
