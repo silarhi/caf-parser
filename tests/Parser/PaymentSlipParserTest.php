@@ -11,7 +11,7 @@ declare(strict_types=1);
  * with this source code in the file LICENSE.
  */
 
-namespace Silarhi\Caf\Tests\Utils;
+namespace Silarhi\Caf\Tests\Parser;
 
 use PHPUnit\Framework\TestCase;
 use Silarhi\Caf\Exceptions\ParseException;
