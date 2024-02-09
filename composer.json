@@ -10,12 +10,8 @@
     ],
     "authors": [
         {
-            "name": "Guillaume Sainthillier",
-            "email": "guillaume@silarhi.fr"
-        },
-        {
-            "name": "Rémy Roussel",
-            "email": "remy@silarhi.fr"
+            "name": "SILARHI",
+            "email": "hello@silarhi.fr"
         }
     ],
     "require": {
