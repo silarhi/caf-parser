@@ -18,7 +18,7 @@
         "php": ">= 8.0"
     },
     "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.52",
+        "friendsofphp/php-cs-fixer": "^3.53",
         "phpunit/phpunit": "^9.6.18",
         "phpstan/phpstan": "^1.10",
         "rector/rector": "^1.0"
