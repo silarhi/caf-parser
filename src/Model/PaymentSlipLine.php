@@ -17,7 +17,7 @@ use DateTimeInterface;
 
 class PaymentSlipLine
 {
-    private ?string $reference;
+    private ?string $reference = null;
 
     private string $beneficiaryReference;
 
