@@ -21,6 +21,8 @@ use Silarhi\Caf\Exceptions\ParseException;
 use Silarhi\Caf\Model\PaymentSlip;
 use Silarhi\Caf\Model\PaymentSlipLine;
 
+use function sprintf;
+
 /**
  * Parser for LA44ZZ file
  */
