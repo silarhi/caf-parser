@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace Silarhi\Caf\Model;
 
-class PaymentSlip
+final class PaymentSlip
 {
     /** @var PaymentSlipLine[] */
     private array $lines = [];
