@@ -23,5 +23,5 @@ return RectorConfig::configure()
     // uncomment to reach your current PHP version
     ->withPhpSets()
     ->withSets([
-        PHPUnitSetList::PHPUNIT_90,
+        PHPUnitSetList::PHPUNIT_100,
     ]);

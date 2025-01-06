@@ -52,7 +52,7 @@ final class PaymentSlipParserTest extends TestCase
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotNull($result);
+        $this->assertNotCount(0, $result->getLines());
     }
 
     public function testParsing2(): void
@@ -61,7 +61,7 @@ final class PaymentSlipParserTest extends TestCase
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt');
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotNull($result);
+        $this->assertNotCount(0, $result->getLines());
     }
 
     public function testParsing3(): void
@@ -70,6 +70,6 @@ final class PaymentSlipParserTest extends TestCase
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_3.txt');
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotNull($result);
+        $this->assertNotCount(0, $result->getLines());
     }
 }
