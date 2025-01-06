@@ -26,7 +26,7 @@ use function sprintf;
 /**
  * Parser for LA44ZZ file
  */
-class PaymentSlipParser
+final class PaymentSlipParser
 {
     private const TABLE_CONTENT_REGEX = '/-{121}[\S\s]*-{121}\s*?([\s|\S]*)\s*-{121}[\S\s]*-{121}/U';
 

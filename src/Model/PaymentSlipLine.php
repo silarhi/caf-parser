@@ -15,7 +15,7 @@ namespace Silarhi\Caf\Model;
 
 use DateTimeInterface;
 
-class PaymentSlipLine
+final class PaymentSlipLine
 {
     private ?string $reference = null;
 

@@ -17,7 +17,7 @@ use PHPUnit\Framework\TestCase;
 use Silarhi\Caf\Exceptions\ParseException;
 use Silarhi\Caf\Parser\PaymentSlipParser;
 
-class PaymentSlipParserTest extends TestCase
+final class PaymentSlipParserTest extends TestCase
 {
     public function testEmptyInput(): void
     {

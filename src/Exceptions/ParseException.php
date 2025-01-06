@@ -15,6 +15,6 @@ namespace Silarhi\Caf\Exceptions;
 
 use Exception;
 
-class ParseException extends Exception
+final class ParseException extends Exception
 {
 }
