@@ -20,7 +20,7 @@
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.66",
         "phpstan/phpstan": "^2",
-        "phpunit/phpunit": "^11.5.2",
+        "phpunit/phpunit": "^11.5.3",
         "rector/rector": "^2"
     },
     "autoload": {
