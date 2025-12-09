@@ -15,7 +15,7 @@ namespace Silarhi\Caf\Parser;
 
 use function count;
 
-use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
 use Silarhi\Caf\Exceptions\ParseException;
 use Silarhi\Caf\Model\PaymentSlip;
@@ -87,13 +87,13 @@ final class PaymentSlipParser
 
     private function getDateValue(string $input): DateTimeInterface
     {
-        $result = DateTime::createFromFormat(self::DATE_FORMAT, $input);
+        $result = DateTimeImmutable::createFromFormat(self::DATE_FORMAT, $input);
         if (!$result) {
             throw new ParseException(sprintf('"%s" date value could not be parsed, expected format is "%s"', $input, self::DATE_FORMAT));
         }
 
-        $result->setDate((int) $result->format('Y'), (int) $result->format('m'), 1);
-        $result->setTime(0, 0);
+        $result = $result->setDate((int) $result->format('Y'), (int) $result->format('m'), 1);
+        $result = $result->setTime(0, 0);
 
         return $result;
     }
