@@ -53,6 +53,26 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotCount(0, $result->getLines());
+
+        // Test metadata
+        $this->assertNotNull($result->getProcessingDate());
+        $this->assertSame('2021-11-27', $result->getProcessingDate()->format('Y-m-d'));
+
+        $this->assertNotNull($result->getPaymentDate());
+        $this->assertSame('2021-11-25', $result->getPaymentDate()->format('Y-m-d'));
+
+        $this->assertSame('CAISSE D\'ALLOCATIONS FAMILIALES DE HAUTE GARONNE', $result->getCafName());
+        $this->assertSame('24 RUE PIERRE PAUL RIQUET, 31046 TOULOUSE CEDEX 9', $result->getCafAddress());
+
+        $this->assertSame('SCI SCITEST', $result->getRecipientName());
+        $this->assertSame('34 RUE DES ALOUETTES, 81100 CASTRES', $result->getRecipientAddress());
+
+        $this->assertSame('0111111 0002', $result->getReference());
+
+        $this->assertSame('CMCIFR2A', $result->getBic());
+        $this->assertSame('FR7600000000111122223333444', $result->getIban());
+
+        $this->assertSame(1298.00, $result->getTotalAmount());
     }
 
     public function testParsing2(): void
