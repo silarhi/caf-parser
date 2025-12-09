@@ -12,7 +12,6 @@ declare(strict_types=1);
  */
 
 use Rector\Config\RectorConfig;
-use Rector\PHPUnit\Set\PHPUnitSetList;
 
 return RectorConfig::configure()
     ->withImportNames()
@@ -22,6 +21,6 @@ return RectorConfig::configure()
     ])
     // uncomment to reach your current PHP version
     ->withPhpSets()
-    ->withSets([
-        PHPUnitSetList::PHPUNIT_100,
-    ]);
+    ->withComposerBased(
+        phpunit: true
+    );

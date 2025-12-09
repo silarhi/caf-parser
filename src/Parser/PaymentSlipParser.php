@@ -78,7 +78,7 @@ final class PaymentSlipParser
                 throw new ParseException(sprintf('CAF Row n°%d could not be parsed', $i + 1));
             }
 
-            $values = array_map('trim', $values);
+            $values = array_map(trim(...), $values);
 
             $paymentSlipLine = new PaymentSlipLine();
             $paymentSlipLine
