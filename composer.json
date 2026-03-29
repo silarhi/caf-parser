@@ -1,36 +1,37 @@
 {
-    "name": "silarhi/caf-parser",
-    "description": "A CAF Parser for LA44ZZ file",
-    "license": "MIT",
-    "type": "library",
-    "keywords": [
-        "caf",
-        "parser",
-        "LA44ZZ"
-    ],
-    "authors": [
-        {
-            "name": "SILARHI",
-            "email": "hello@silarhi.fr"
-        }
-    ],
-    "require": {
-        "php": ">=8.2"
-    },
-    "require-dev": {
-        "friendsofphp/php-cs-fixer": "^3.94",
-        "phpstan/phpstan": "^2",
-        "phpunit/phpunit": "^11.5.6",
-        "rector/rector": "^2"
-    },
-    "autoload": {
-        "psr-4": {
-            "Silarhi\\Caf\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Silarhi\\Caf\\Tests\\": "tests/"
-        }
+  "name": "silarhi/caf-parser",
+  "description": "A CAF Parser for LA44ZZ file",
+  "license": "MIT",
+  "type": "library",
+  "keywords": [
+    "caf",
+    "parser",
+    "LA44ZZ"
+  ],
+  "authors": [
+    {
+      "name": "SILARHI",
+      "email": "hello@silarhi.fr"
     }
+  ],
+  "require": {
+    "php": ">=8.2"
+  },
+  "require-dev": {
+    "friendsofphp/php-cs-fixer": "^3.94",
+    "phpstan/phpstan": "^2",
+    "phpstan/phpstan-strict-rules": "^2.0",
+    "phpunit/phpunit": "^11.5|^12|^13",
+    "rector/rector": "^2"
+  },
+  "autoload": {
+    "psr-4": {
+      "Silarhi\\Caf\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Silarhi\\Caf\\Tests\\": "tests/"
+    }
+  }
 }
