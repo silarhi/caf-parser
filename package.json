@@ -6,7 +6,8 @@
   },
   "lint-staged": {
     "*.md": "prettier --write",
-    "*.php": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php"
+    "*.php": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
+    "composer.json": "composer normalize"
   },
   "scripts": {
     "prepare": "husky"
