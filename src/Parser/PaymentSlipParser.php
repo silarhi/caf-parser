@@ -113,13 +113,15 @@ final class PaymentSlipParser
 
     private function getDateValue(string $input): DateTimeInterface
     {
-        $result = DateTimeImmutable::createFromFormat(self::DATE_FORMAT, $input);
-        if (!$result) {
+        // "!" resets the fields missing from the format (day and time) instead of taking them from the current date,
+        // so the result is always the 1st of the month at midnight, whatever the day the parser runs on
+        $result = DateTimeImmutable::createFromFormat('!' . self::DATE_FORMAT, $input);
+
+        // Out of range months (e.g. "13 2021") are parsed with a warning and silently rolled over to another month
+        $errors = DateTimeImmutable::getLastErrors();
+        if (!$result || (false !== $errors && $errors['warning_count'] > 0)) {
             throw new ParseException(sprintf('"%s" date value could not be parsed, expected format is "%s"', $input, self::DATE_FORMAT));
         }
-
-        $result = $result->setDate((int) $result->format('Y'), (int) $result->format('m'), 1);
-        $result = $result->setTime(0, 0);
 
         return $result;
     }
