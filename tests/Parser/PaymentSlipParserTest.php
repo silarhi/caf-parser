@@ -13,11 +13,14 @@ declare(strict_types=1);
 
 namespace Silarhi\Caf\Tests\Parser;
 
+use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\Caf\Exceptions\ParseException;
 use Silarhi\Caf\Model\PaymentSlipLine;
 use Silarhi\Caf\Parser\PaymentSlipParser;
+
+use function sprintf;
 
 final class PaymentSlipParserTest extends TestCase
 {
@@ -84,24 +87,23 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
 
-        // Start and end dates are asserted in dedicated tests using months with 31 days:
-        // PaymentSlipParser::getDateValue() inherits the current day of month, so "11 2021"
-        // overflows to December when the suite runs on the 31st of a month.
         $expected = [
-            ['', '1111111 S', 'MR ABABABA JOHNNY', 272.00, 0.00, 272.00],
-            ['', '2222222 L', 'MR ADADADA PHILIPPE', 50.00, 0.00, 50.00],
-            ['', '3333333 H', 'MR AFAFAFAFA MATHIEU', 272.00, 0.00, 272.00],
-            ['0000000000000', '4444444 S', 'MME AGAGA MARIE', 175.00, 0.00, 175.00],
-            ['', '5555555 E', 'MR ANANA JEAN PHILIPPE', 175.00, 0.00, 175.00],
-            ['', '6666666 M', 'MR AMAMA MARTIN', 133.00, 0.00, 133.00],
-            ['', '7777777 H', 'MR AYAYAYA LEO', 133.00, 0.00, 133.00],
-            ['0000000000000', '8888888 U', 'MR AZAZAZ MARC', 88.00, 0.00, 88.00],
+            ['', '1111111 S', 'MR ABABABA JOHNNY', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 272.00, 0.00, 272.00],
+            ['', '2222222 L', 'MR ADADADA PHILIPPE', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 50.00, 0.00, 50.00],
+            ['', '3333333 H', 'MR AFAFAFAFA MATHIEU', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 272.00, 0.00, 272.00],
+            ['0000000000000', '4444444 S', 'MME AGAGA MARIE', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 175.00, 0.00, 175.00],
+            ['', '5555555 E', 'MR ANANA JEAN PHILIPPE', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 175.00, 0.00, 175.00],
+            ['', '6666666 M', 'MR AMAMA MARTIN', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 133.00, 0.00, 133.00],
+            ['', '7777777 H', 'MR AYAYAYA LEO', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 133.00, 0.00, 133.00],
+            ['0000000000000', '8888888 U', 'MR AZAZAZ MARC', '2021-11-01 00:00:00', '2021-11-01 00:00:00', 88.00, 0.00, 88.00],
         ];
 
         $actual = array_map(static fn (PaymentSlipLine $line): array => [
             $line->getReference(),
             $line->getBeneficiaryReference(),
             $line->getBeneficiaryName(),
+            $line->getStartDate()->format('Y-m-d H:i:s'),
+            $line->getEndDate()->format('Y-m-d H:i:s'),
             $line->getGrossAmount(),
             $line->getDeduction(),
             $line->getNetAmount(),
@@ -216,6 +218,36 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNull($result->getTotalAmount());
     }
 
+    /**
+     * Every month is covered so that the test fails on any 29th, 30th or 31st of a month
+     * if the parsed date inherits the current day of month (e.g. "02 2021" overflowing to March).
+     */
+    #[DataProvider('provideMonthDates')]
+    public function testMonthDatesDoNotDependOnCurrentDay(string $month, string $expectedDate): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(self::buildContent(
+            sprintf(' :                      : 1234567 A : MME TEST ALPHA           : %s : %s :       42,00:       0,00:      42,00 :', $month, $month),
+        ));
+
+        $this->assertCount(1, $result->getLines());
+        $line = $result->getLines()[0];
+        $this->assertEquals(new DateTimeImmutable($expectedDate), $line->getStartDate());
+        $this->assertEquals(new DateTimeImmutable($expectedDate), $line->getEndDate());
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideMonthDates(): iterable
+    {
+        for ($month = 1; $month <= 12; ++$month) {
+            yield sprintf('month %02d', $month) => [sprintf('%02d 2021', $month), sprintf('2021-%02d-01 00:00:00', $month)];
+        }
+
+        yield 'leap year february' => ['02 2024', '2024-02-01 00:00:00'];
+    }
+
     #[DataProvider('provideInvalidDateRows')]
     public function testInvalidDate(string $row, string $expectedMessage): void
     {
@@ -247,6 +279,16 @@ final class PaymentSlipParserTest extends TestCase
         yield 'empty start date' => [
             ' :                      : 7654321 B : MR TEST BETA             :         : 01 2022 :       10,00:       0,00:      10,00 :',
             'CAF Row n°2 : "" date value could not be parsed, expected format is "m Y"',
+        ];
+
+        yield 'out of range start month' => [
+            ' :                      : 7654321 B : MR TEST BETA             : 13 2021 : 01 2022 :       10,00:       0,00:      10,00 :',
+            'CAF Row n°2 : "13 2021" date value could not be parsed, expected format is "m Y"',
+        ];
+
+        yield 'zero end month' => [
+            ' :                      : 7654321 B : MR TEST BETA             : 01 2022 : 00 2022 :       10,00:       0,00:      10,00 :',
+            'CAF Row n°2 : "00 2022" date value could not be parsed, expected format is "m Y"',
         ];
     }
 
