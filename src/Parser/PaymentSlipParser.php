@@ -122,32 +122,29 @@ final class PaymentSlipParser
 
     private function getDateValue(string $input): DateTimeInterface
     {
-        // "!" resets the fields missing from the format (day and time) instead of taking them from the current date,
-        // so the result is always the 1st of the month at midnight, whatever the day the parser runs on
-        $result = DateTimeImmutable::createFromFormat('!' . self::DATE_FORMAT, $input);
+        return $this->createDateFromFormat(self::DATE_FORMAT, $input);
+    }
 
-        // Out of range months (e.g. "13 2021") are parsed with a warning and silently rolled over to another month
+    private function getFullDateValue(string $input): DateTimeInterface
+    {
+        $input = preg_replace('/\s+/', ' ', trim($input)) ?? $input;
+
+        return $this->createDateFromFormat(self::FULL_DATE_FORMAT, $input);
+    }
+
+    private function createDateFromFormat(string $format, string $input): DateTimeImmutable
+    {
+        // "!" resets the fields missing from the format (day and time) instead of taking them from the current date,
+        // so the result does not depend on the day the parser runs on (e.g. "m Y" is always the 1st of the month at midnight)
+        $result = DateTimeImmutable::createFromFormat('!' . $format, $input);
+
+        // Out of range values (e.g. "13 2021" or "31 02 2021") are parsed with a warning and silently rolled over
         $errors = DateTimeImmutable::getLastErrors();
         if (!$result || (false !== $errors && $errors['warning_count'] > 0)) {
-            throw new ParseException(sprintf('"%s" date value could not be parsed, expected format is "%s"', $input, self::DATE_FORMAT));
+            throw new ParseException(sprintf('"%s" date value could not be parsed, expected format is "%s"', $input, $format));
         }
 
         return $result;
-    }
-
-    private function getFullDateValue(string $input): ?DateTimeInterface
-    {
-        $input = preg_replace('/\s+/', ' ', trim($input));
-        if (null === $input) {
-            return null;
-        }
-
-        $result = DateTimeImmutable::createFromFormat(self::FULL_DATE_FORMAT, $input);
-        if (!$result) {
-            return null;
-        }
-
-        return $result->setTime(0, 0);
     }
 
     private function parseMetadata(string $content, PaymentSlip $paymentSlip): void
