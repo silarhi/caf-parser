@@ -8,6 +8,12 @@
          cacheDirectory=".phpunit.cache"
          backupStaticProperties="false"
 >
+  <coverage>
+    <report>
+      <clover outputFile="coverage/clover.xml"/>
+      <text outputFile="php://stdout" showOnlySummary="true"/>
+    </report>
+  </coverage>
   <testsuites>
     <testsuite name="Test Suite">
       <directory>./tests</directory>
