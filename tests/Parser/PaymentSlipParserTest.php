@@ -13,8 +13,10 @@ declare(strict_types=1);
 
 namespace Silarhi\Caf\Tests\Parser;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\Caf\Exceptions\ParseException;
+use Silarhi\Caf\Model\PaymentSlipLine;
 use Silarhi\Caf\Parser\PaymentSlipParser;
 
 final class PaymentSlipParserTest extends TestCase
@@ -75,6 +77,42 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertSame(1298.00, $result->getTotalAmount());
     }
 
+    public function testParsingLines(): void
+    {
+        $parser = new PaymentSlipParser();
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
+        $this->assertNotFalse($content);
+        $result = $parser->parse($content);
+
+        // Start and end dates are asserted in dedicated tests using months with 31 days:
+        // PaymentSlipParser::getDateValue() inherits the current day of month, so "11 2021"
+        // overflows to December when the suite runs on the 31st of a month.
+        $expected = [
+            ['', '1111111 S', 'MR ABABABA JOHNNY', 272.00, 0.00, 272.00],
+            ['', '2222222 L', 'MR ADADADA PHILIPPE', 50.00, 0.00, 50.00],
+            ['', '3333333 H', 'MR AFAFAFAFA MATHIEU', 272.00, 0.00, 272.00],
+            ['0000000000000', '4444444 S', 'MME AGAGA MARIE', 175.00, 0.00, 175.00],
+            ['', '5555555 E', 'MR ANANA JEAN PHILIPPE', 175.00, 0.00, 175.00],
+            ['', '6666666 M', 'MR AMAMA MARTIN', 133.00, 0.00, 133.00],
+            ['', '7777777 H', 'MR AYAYAYA LEO', 133.00, 0.00, 133.00],
+            ['0000000000000', '8888888 U', 'MR AZAZAZ MARC', 88.00, 0.00, 88.00],
+        ];
+
+        $actual = array_map(static fn (PaymentSlipLine $line): array => [
+            $line->getReference(),
+            $line->getBeneficiaryReference(),
+            $line->getBeneficiaryName(),
+            $line->getGrossAmount(),
+            $line->getDeduction(),
+            $line->getNetAmount(),
+        ], $result->getLines());
+
+        $this->assertSame($expected, $actual);
+
+        $netTotal = array_sum(array_map(static fn (PaymentSlipLine $line): float => $line->getNetAmount(), $result->getLines()));
+        $this->assertSame($result->getTotalAmount(), $netTotal);
+    }
+
     public function testParsing2(): void
     {
         $parser = new PaymentSlipParser();
@@ -82,6 +120,24 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotCount(0, $result->getLines());
+
+        $this->assertNotNull($result->getProcessingDate());
+        $this->assertSame('2021-02-10 00:00:00', $result->getProcessingDate()->format('Y-m-d H:i:s'));
+        $this->assertNotNull($result->getPaymentDate());
+        $this->assertSame('2021-02-09 00:00:00', $result->getPaymentDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('FR7610278022040055555555555', $result->getIban());
+        $this->assertSame(33.00, $result->getTotalAmount());
+
+        $this->assertCount(1, $result->getLines());
+        $line = $result->getLines()[0];
+        $this->assertSame('', $line->getReference());
+        $this->assertSame('1111111 J', $line->getBeneficiaryReference());
+        $this->assertSame('MME JESUS', $line->getBeneficiaryName());
+        $this->assertSame('2021-01-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('2021-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        $this->assertSame(33.00, $line->getGrossAmount());
+        $this->assertSame(0.00, $line->getDeduction());
+        $this->assertSame(33.00, $line->getNetAmount());
     }
 
     public function testParsing3(): void
@@ -91,5 +147,140 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNotFalse($content);
         $result = $parser->parse($content);
         $this->assertNotCount(0, $result->getLines());
+    }
+
+    public function testParsingWindowsLineEndings(): void
+    {
+        $parser = new PaymentSlipParser();
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt');
+        $this->assertNotFalse($content);
+
+        $expected = $parser->parse($content);
+        $result = $parser->parse(str_replace("\n", "\r\n", $content));
+
+        $this->assertEquals($expected, $result);
+        $this->assertCount(1, $result->getLines());
+        $this->assertSame('MME JESUS', $result->getLines()[0]->getBeneficiaryName());
+    }
+
+    public function testParsingLineColumns(): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(self::buildContent(
+            ' : 1234567890123        : 1234567 A : MME TEST ALPHA           : 12 2021 : 01 2022 :      300,00:      25,50:     274,50 :',
+            ' :                      : 7654321 B : MR TEST BETA             : 03 2022 : 03 2022 :       10,00:       0,00:      10,00 :',
+        ));
+
+        $this->assertCount(2, $result->getLines());
+
+        $line = $result->getLines()[0];
+        $this->assertSame('1234567890123', $line->getReference());
+        $this->assertSame('1234567 A', $line->getBeneficiaryReference());
+        $this->assertSame('MME TEST ALPHA', $line->getBeneficiaryName());
+        $this->assertSame('2021-12-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('2022-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        $this->assertSame(300.00, $line->getGrossAmount());
+        $this->assertSame(25.50, $line->getDeduction());
+        $this->assertSame(274.50, $line->getNetAmount());
+
+        $line = $result->getLines()[1];
+        $this->assertSame('', $line->getReference());
+        $this->assertSame('7654321 B', $line->getBeneficiaryReference());
+        $this->assertSame('MR TEST BETA', $line->getBeneficiaryName());
+        $this->assertSame('2022-03-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        $this->assertSame('2022-03-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        $this->assertSame(10.00, $line->getGrossAmount());
+        $this->assertSame(0.00, $line->getDeduction());
+        $this->assertSame(10.00, $line->getNetAmount());
+    }
+
+    public function testParsingWithoutMetadata(): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        ));
+
+        $this->assertCount(1, $result->getLines());
+        $this->assertSame(42.00, $result->getLines()[0]->getNetAmount());
+
+        $this->assertNull($result->getProcessingDate());
+        $this->assertNull($result->getPaymentDate());
+        $this->assertNull($result->getCafName());
+        $this->assertNull($result->getCafAddress());
+        $this->assertNull($result->getRecipientName());
+        $this->assertNull($result->getRecipientAddress());
+        $this->assertNull($result->getReference());
+        $this->assertNull($result->getBic());
+        $this->assertNull($result->getIban());
+        $this->assertNull($result->getTotalAmount());
+    }
+
+    #[DataProvider('provideInvalidDateRows')]
+    public function testInvalidDate(string $row, string $expectedMessage): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        $parser = new PaymentSlipParser();
+        $parser->parse(self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+            $row,
+        ));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideInvalidDateRows(): iterable
+    {
+        yield 'invalid start date' => [
+            ' :                      : 7654321 B : MR TEST BETA             : AB 2022 : 01 2022 :       10,00:       0,00:      10,00 :',
+            'CAF Row n°2 : "AB 2022" date value could not be parsed, expected format is "m Y"',
+        ];
+
+        yield 'invalid end date' => [
+            ' :                      : 7654321 B : MR TEST BETA             : 01 2022 : 2022-01 :       10,00:       0,00:      10,00 :',
+            'CAF Row n°2 : "2022-01" date value could not be parsed, expected format is "m Y"',
+        ];
+
+        yield 'empty start date' => [
+            ' :                      : 7654321 B : MR TEST BETA             :         : 01 2022 :       10,00:       0,00:      10,00 :',
+            'CAF Row n°2 : "" date value could not be parsed, expected format is "m Y"',
+        ];
+    }
+
+    public function testInvalidDateKeepsPreviousException(): void
+    {
+        $parser = new PaymentSlipParser();
+
+        try {
+            $parser->parse(self::buildContent(
+                ' :                      : 1234567 A : MME TEST ALPHA           : XX XXXX : 01 2022 :       42,00:       0,00:      42,00 :',
+            ));
+            $this->fail('A ParseException should have been thrown');
+        } catch (ParseException $e) {
+            $this->assertSame('CAF Row n°1 : "XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getMessage());
+            $this->assertInstanceOf(ParseException::class, $e->getPrevious());
+            $this->assertSame('"XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getPrevious()->getMessage());
+        }
+    }
+
+    /**
+     * Builds a minimal LA44ZZ document (no header metadata) around the given table rows.
+     */
+    private static function buildContent(string ...$rows): string
+    {
+        $separator = ' ' . str_repeat('-', 121);
+
+        return implode("\n", [
+            $separator,
+            ' :      REFERENCES      :   NUMERO  :       NOM DESTINATAIRE   : DATE    :  DATE   :  MONTANT   : RETENUE   :  MONTANT   :',
+            $separator,
+            ...$rows,
+            $separator,
+            ' :                                                                                               TOTAL :',
+            $separator,
+        ]) . "\n";
     }
 }
