@@ -50,6 +50,9 @@ final class PaymentSlipParser
 
     private const TOTAL_REGEX = '/TOTAL\s*:\s*([\d\s,.]+)\s*:/';
 
+    // Space thousands separators of amounts: whitespaces, including UTF-8 no-break and narrow no-break spaces
+    private const AMOUNT_SPACES_REGEX = '/\s|\xC2\xA0|\xE2\x80\xAF/';
+
     public const DATE_FORMAT = 'm Y';
 
     public const FULL_DATE_FORMAT = 'd m Y';
@@ -106,7 +109,13 @@ final class PaymentSlipParser
 
     private function getAmountValue(string $input): float
     {
-        $input = str_replace(',', '.', $input);
+        $input = preg_replace(self::AMOUNT_SPACES_REGEX, '', $input) ?? $input;
+
+        // French formatting ("1.298,00"): the comma is the decimal separator and dots are thousands separators.
+        // Without a comma, a dot is the decimal separator ("1298.00").
+        if (str_contains($input, ',')) {
+            $input = str_replace(['.', ','], ['', '.'], $input);
+        }
 
         return (float) $input;
     }

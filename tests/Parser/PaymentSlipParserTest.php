@@ -218,6 +218,71 @@ final class PaymentSlipParserTest extends TestCase
         $this->assertNull($result->getTotalAmount());
     }
 
+    #[DataProvider('provideAmounts')]
+    public function testParsingLineAmounts(string $amount, float $expected): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(self::buildContent(
+            sprintf(' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :%s:%s:%s:', $amount, $amount, $amount),
+        ));
+
+        $this->assertCount(1, $result->getLines());
+        $line = $result->getLines()[0];
+        $this->assertSame($expected, $line->getGrossAmount());
+        $this->assertSame($expected, $line->getDeduction());
+        $this->assertSame($expected, $line->getNetAmount());
+    }
+
+    /**
+     * @return iterable<string, array{string, float}>
+     */
+    public static function provideAmounts(): iterable
+    {
+        yield 'without thousands separator' => ['     1298,00 ', 1298.00];
+        yield 'zero' => ['        0,00 ', 0.00];
+        yield 'without decimals' => ['         272 ', 272.00];
+        yield 'space thousands separator' => ['    1 298,50 ', 1298.50];
+        yield 'dot thousands separator' => ['    1.298,50 ', 1298.50];
+        yield 'no-break space thousands separator' => ["    1\u{00A0}298,50 ", 1298.50];
+        yield 'narrow no-break space thousands separator' => ["    1\u{202F}298,50 ", 1298.50];
+        yield 'several thousands separators' => [' 12 345 678,90 ', 12345678.90];
+        yield 'several dot thousands separators' => [' 12.345.678,90 ', 12345678.90];
+        yield 'dot decimal separator' => ['     1298.50 ', 1298.50];
+        yield 'dot decimal separator with space thousands separator' => ['    1 298.50 ', 1298.50];
+        yield 'dot decimal separator with no-break space thousands separator' => ["    1\u{00A0}298.50 ", 1298.50];
+        yield 'dot decimal separator with narrow no-break space thousands separator' => ["    1\u{202F}298.50 ", 1298.50];
+    }
+
+    /**
+     * TOTAL_REGEX only accepts digits, commas, dots and ASCII whitespaces in the total amount.
+     */
+    #[DataProvider('provideTotalAmounts')]
+    public function testParsingTotalAmount(string $total, float $expected): void
+    {
+        $parser = new PaymentSlipParser();
+        $content = self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        );
+        $result = $parser->parse(str_replace('TOTAL :', sprintf('TOTAL : %s :', $total), $content));
+
+        $this->assertSame($expected, $result->getTotalAmount());
+    }
+
+    /**
+     * @return iterable<string, array{string, float}>
+     */
+    public static function provideTotalAmounts(): iterable
+    {
+        yield 'without thousands separator' => ['        1298,00', 1298.00];
+        yield 'space thousands separator' => ['       1 298,00', 1298.00];
+        yield 'dot thousands separator' => ['       1.298,00', 1298.00];
+        yield 'several thousands separators' => ['  12 345 678,90', 12345678.90];
+        yield 'several dot thousands separators' => ['  12.345.678,90', 12345678.90];
+        yield 'dot decimal separator' => ['        1298.00', 1298.00];
+        yield 'dot decimal separator with space thousands separator' => ['       1 298.00', 1298.00];
+        yield 'without decimals' => ['           1298', 1298.00];
+    }
+
     /**
      * Every month is covered so that the test fails on any 29th, 30th or 31st of a month
      * if the parsed date inherits the current day of month (e.g. "02 2021" overflowing to March).
