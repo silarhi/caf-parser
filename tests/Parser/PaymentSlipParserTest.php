@@ -357,6 +357,67 @@ final class PaymentSlipParserTest extends TestCase
         ];
     }
 
+    public function testParsingMetadataDates(): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(implode("\n", [
+            ' DATE DE TRAITEMENT : 29  02  2024',
+            ' : BORDEREAU DE PAIEMENT A.L.  DU     31 01 2024 :',
+            self::buildContent(
+                ' :                      : 1234567 A : MME TEST ALPHA           : 01 2024 : 01 2024 :       42,00:       0,00:      42,00 :',
+            ),
+        ]));
+
+        $this->assertEquals(new DateTimeImmutable('2024-02-29 00:00:00'), $result->getProcessingDate());
+        $this->assertEquals(new DateTimeImmutable('2024-01-31 00:00:00'), $result->getPaymentDate());
+    }
+
+    #[DataProvider('provideInvalidMetadataDates')]
+    public function testInvalidMetadataDate(string $header, string $expectedMessage): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage($expectedMessage);
+
+        $parser = new PaymentSlipParser();
+        $parser->parse(implode("\n", [
+            $header,
+            self::buildContent(
+                ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+            ),
+        ]));
+    }
+
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideInvalidMetadataDates(): iterable
+    {
+        yield 'invalid processing day' => [
+            ' DATE DE TRAITEMENT : 31 02 2021',
+            '"31 02 2021" date value could not be parsed, expected format is "d m Y"',
+        ];
+
+        yield 'invalid processing month' => [
+            ' DATE DE TRAITEMENT : 15 13 2021',
+            '"15 13 2021" date value could not be parsed, expected format is "d m Y"',
+        ];
+
+        yield 'invalid payment day' => [
+            ' : BORDEREAU DE PAIEMENT A.L.  DU     00 11 2021 :',
+            '"00 11 2021" date value could not be parsed, expected format is "d m Y"',
+        ];
+
+        yield 'invalid payment month' => [
+            ' : BORDEREAU DE PAIEMENT A.L.  DU     15 00 2021 :',
+            '"15 00 2021" date value could not be parsed, expected format is "d m Y"',
+        ];
+
+        yield 'non leap year february 29th' => [
+            ' : BORDEREAU DE PAIEMENT A.L.  DU     29 02 2021 :',
+            '"29 02 2021" date value could not be parsed, expected format is "d m Y"',
+        ];
+    }
+
     public function testInvalidDateKeepsPreviousException(): void
     {
         $parser = new PaymentSlipParser();
