@@ -144,7 +144,7 @@ vendor/bin/phpunit && vendor/bin/phpstan analyse && vendor/bin/php-cs-fixer fix 
 
 ## License
 
-MIT License. See [composer.json](composer.json) for details.
+MIT License. See [LICENSE](LICENSE) for details.
 
 ---
 
