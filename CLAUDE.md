@@ -17,7 +17,7 @@ vendor/bin/phpunit
 vendor/bin/phpunit tests/Parser/PaymentSlipParserTest.php  # Single file
 vendor/bin/phpunit --filter testParsing                     # Single method
 
-# Static analysis (level 9)
+# Static analysis (level max)
 vendor/bin/phpstan analyse
 
 # Code style
@@ -45,7 +45,7 @@ vendor/bin/rector process
 ## Code Standards
 
 - PHP 8.2+ required
-- PHPStan level 9
+- PHPStan level max
 - Symfony PHP-CS-Fixer ruleset with `@Symfony:risky`
 - `declare(strict_types=1)` in all files
 - Header comment required in all source files
