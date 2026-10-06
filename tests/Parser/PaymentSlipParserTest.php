@@ -47,7 +47,7 @@ final class PaymentSlipParserTest extends TestCase
 
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_unparseable_2nd_row.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
         $parser->parse($content);
     }
 
@@ -55,36 +55,36 @@ final class PaymentSlipParserTest extends TestCase
     {
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotCount(0, $result->getLines());
+        self::assertNotCount(0, $result->getLines());
 
         // Test metadata
-        $this->assertNotNull($result->getProcessingDate());
-        $this->assertSame('2021-11-27', $result->getProcessingDate()->format('Y-m-d'));
+        self::assertNotNull($result->getProcessingDate());
+        self::assertSame('2021-11-27', $result->getProcessingDate()->format('Y-m-d'));
 
-        $this->assertNotNull($result->getPaymentDate());
-        $this->assertSame('2021-11-25', $result->getPaymentDate()->format('Y-m-d'));
+        self::assertNotNull($result->getPaymentDate());
+        self::assertSame('2021-11-25', $result->getPaymentDate()->format('Y-m-d'));
 
-        $this->assertSame('CAISSE D\'ALLOCATIONS FAMILIALES DE HAUTE GARONNE', $result->getCafName());
-        $this->assertSame('24 RUE PIERRE PAUL RIQUET, 31046 TOULOUSE CEDEX 9', $result->getCafAddress());
+        self::assertSame('CAISSE D\'ALLOCATIONS FAMILIALES DE HAUTE GARONNE', $result->getCafName());
+        self::assertSame('24 RUE PIERRE PAUL RIQUET, 31046 TOULOUSE CEDEX 9', $result->getCafAddress());
 
-        $this->assertSame('SCI SCITEST', $result->getRecipientName());
-        $this->assertSame('34 RUE DES ALOUETTES, 81100 CASTRES', $result->getRecipientAddress());
+        self::assertSame('SCI SCITEST', $result->getRecipientName());
+        self::assertSame('34 RUE DES ALOUETTES, 81100 CASTRES', $result->getRecipientAddress());
 
-        $this->assertSame('0111111 0002', $result->getReference());
+        self::assertSame('0111111 0002', $result->getReference());
 
-        $this->assertSame('CMCIFR2A', $result->getBic());
-        $this->assertSame('FR7600000000111122223333444', $result->getIban());
+        self::assertSame('CMCIFR2A', $result->getBic());
+        self::assertSame('FR7600000000111122223333444', $result->getIban());
 
-        $this->assertSame(1298.00, $result->getTotalAmount());
+        self::assertSame(1298.00, $result->getTotalAmount());
     }
 
     public function testParsingLines(): void
     {
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
         $result = $parser->parse($content);
 
         $expected = [
@@ -109,60 +109,60 @@ final class PaymentSlipParserTest extends TestCase
             $line->getNetAmount(),
         ], $result->getLines());
 
-        $this->assertSame($expected, $actual);
+        self::assertSame($expected, $actual);
 
         $netTotal = array_sum(array_map(static fn (PaymentSlipLine $line): float => $line->getNetAmount(), $result->getLines()));
-        $this->assertSame($result->getTotalAmount(), $netTotal);
+        self::assertSame($result->getTotalAmount(), $netTotal);
     }
 
     public function testParsing2(): void
     {
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotCount(0, $result->getLines());
+        self::assertNotCount(0, $result->getLines());
 
-        $this->assertNotNull($result->getProcessingDate());
-        $this->assertSame('2021-02-10 00:00:00', $result->getProcessingDate()->format('Y-m-d H:i:s'));
-        $this->assertNotNull($result->getPaymentDate());
-        $this->assertSame('2021-02-09 00:00:00', $result->getPaymentDate()->format('Y-m-d H:i:s'));
-        $this->assertSame('FR7610278022040055555555555', $result->getIban());
-        $this->assertSame(33.00, $result->getTotalAmount());
+        self::assertNotNull($result->getProcessingDate());
+        self::assertSame('2021-02-10 00:00:00', $result->getProcessingDate()->format('Y-m-d H:i:s'));
+        self::assertNotNull($result->getPaymentDate());
+        self::assertSame('2021-02-09 00:00:00', $result->getPaymentDate()->format('Y-m-d H:i:s'));
+        self::assertSame('FR7610278022040055555555555', $result->getIban());
+        self::assertSame(33.00, $result->getTotalAmount());
 
-        $this->assertCount(1, $result->getLines());
+        self::assertCount(1, $result->getLines());
         $line = $result->getLines()[0];
-        $this->assertSame('', $line->getReference());
-        $this->assertSame('1111111 J', $line->getBeneficiaryReference());
-        $this->assertSame('MME JESUS', $line->getBeneficiaryName());
-        $this->assertSame('2021-01-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
-        $this->assertSame('2021-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
-        $this->assertSame(33.00, $line->getGrossAmount());
-        $this->assertSame(0.00, $line->getDeduction());
-        $this->assertSame(33.00, $line->getNetAmount());
+        self::assertSame('', $line->getReference());
+        self::assertSame('1111111 J', $line->getBeneficiaryReference());
+        self::assertSame('MME JESUS', $line->getBeneficiaryName());
+        self::assertSame('2021-01-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        self::assertSame('2021-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        self::assertSame(33.00, $line->getGrossAmount());
+        self::assertSame(0.00, $line->getDeduction());
+        self::assertSame(33.00, $line->getNetAmount());
     }
 
     public function testParsing3(): void
     {
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_3.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
         $result = $parser->parse($content);
-        $this->assertNotCount(0, $result->getLines());
+        self::assertNotCount(0, $result->getLines());
     }
 
     public function testParsingWindowsLineEndings(): void
     {
         $parser = new PaymentSlipParser();
         $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44_2.txt');
-        $this->assertNotFalse($content);
+        self::assertNotFalse($content);
 
         $expected = $parser->parse($content);
         $result = $parser->parse(str_replace("\n", "\r\n", $content));
 
-        $this->assertEquals($expected, $result);
-        $this->assertCount(1, $result->getLines());
-        $this->assertSame('MME JESUS', $result->getLines()[0]->getBeneficiaryName());
+        self::assertEquals($expected, $result);
+        self::assertCount(1, $result->getLines());
+        self::assertSame('MME JESUS', $result->getLines()[0]->getBeneficiaryName());
     }
 
     public function testParsingLineColumns(): void
@@ -173,27 +173,27 @@ final class PaymentSlipParserTest extends TestCase
             ' :                      : 7654321 B : MR TEST BETA             : 03 2022 : 03 2022 :       10,00:       0,00:      10,00 :',
         ));
 
-        $this->assertCount(2, $result->getLines());
+        self::assertCount(2, $result->getLines());
 
         $line = $result->getLines()[0];
-        $this->assertSame('1234567890123', $line->getReference());
-        $this->assertSame('1234567 A', $line->getBeneficiaryReference());
-        $this->assertSame('MME TEST ALPHA', $line->getBeneficiaryName());
-        $this->assertSame('2021-12-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
-        $this->assertSame('2022-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
-        $this->assertSame(300.00, $line->getGrossAmount());
-        $this->assertSame(25.50, $line->getDeduction());
-        $this->assertSame(274.50, $line->getNetAmount());
+        self::assertSame('1234567890123', $line->getReference());
+        self::assertSame('1234567 A', $line->getBeneficiaryReference());
+        self::assertSame('MME TEST ALPHA', $line->getBeneficiaryName());
+        self::assertSame('2021-12-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        self::assertSame('2022-01-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        self::assertSame(300.00, $line->getGrossAmount());
+        self::assertSame(25.50, $line->getDeduction());
+        self::assertSame(274.50, $line->getNetAmount());
 
         $line = $result->getLines()[1];
-        $this->assertSame('', $line->getReference());
-        $this->assertSame('7654321 B', $line->getBeneficiaryReference());
-        $this->assertSame('MR TEST BETA', $line->getBeneficiaryName());
-        $this->assertSame('2022-03-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
-        $this->assertSame('2022-03-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
-        $this->assertSame(10.00, $line->getGrossAmount());
-        $this->assertSame(0.00, $line->getDeduction());
-        $this->assertSame(10.00, $line->getNetAmount());
+        self::assertSame('', $line->getReference());
+        self::assertSame('7654321 B', $line->getBeneficiaryReference());
+        self::assertSame('MR TEST BETA', $line->getBeneficiaryName());
+        self::assertSame('2022-03-01 00:00:00', $line->getStartDate()->format('Y-m-d H:i:s'));
+        self::assertSame('2022-03-01 00:00:00', $line->getEndDate()->format('Y-m-d H:i:s'));
+        self::assertSame(10.00, $line->getGrossAmount());
+        self::assertSame(0.00, $line->getDeduction());
+        self::assertSame(10.00, $line->getNetAmount());
     }
 
     public function testParsingWithoutMetadata(): void
@@ -203,19 +203,19 @@ final class PaymentSlipParserTest extends TestCase
             ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
         ));
 
-        $this->assertCount(1, $result->getLines());
-        $this->assertSame(42.00, $result->getLines()[0]->getNetAmount());
+        self::assertCount(1, $result->getLines());
+        self::assertSame(42.00, $result->getLines()[0]->getNetAmount());
 
-        $this->assertNull($result->getProcessingDate());
-        $this->assertNull($result->getPaymentDate());
-        $this->assertNull($result->getCafName());
-        $this->assertNull($result->getCafAddress());
-        $this->assertNull($result->getRecipientName());
-        $this->assertNull($result->getRecipientAddress());
-        $this->assertNull($result->getReference());
-        $this->assertNull($result->getBic());
-        $this->assertNull($result->getIban());
-        $this->assertNull($result->getTotalAmount());
+        self::assertNull($result->getProcessingDate());
+        self::assertNull($result->getPaymentDate());
+        self::assertNull($result->getCafName());
+        self::assertNull($result->getCafAddress());
+        self::assertNull($result->getRecipientName());
+        self::assertNull($result->getRecipientAddress());
+        self::assertNull($result->getReference());
+        self::assertNull($result->getBic());
+        self::assertNull($result->getIban());
+        self::assertNull($result->getTotalAmount());
     }
 
     #[DataProvider('provideAmounts')]
@@ -226,11 +226,11 @@ final class PaymentSlipParserTest extends TestCase
             sprintf(' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :%s:%s:%s:', $amount, $amount, $amount),
         ));
 
-        $this->assertCount(1, $result->getLines());
+        self::assertCount(1, $result->getLines());
         $line = $result->getLines()[0];
-        $this->assertSame($expected, $line->getGrossAmount());
-        $this->assertSame($expected, $line->getDeduction());
-        $this->assertSame($expected, $line->getNetAmount());
+        self::assertSame($expected, $line->getGrossAmount());
+        self::assertSame($expected, $line->getDeduction());
+        self::assertSame($expected, $line->getNetAmount());
     }
 
     /**
@@ -265,7 +265,7 @@ final class PaymentSlipParserTest extends TestCase
         );
         $result = $parser->parse(str_replace('TOTAL :', sprintf('TOTAL : %s :', $total), $content));
 
-        $this->assertSame($expected, $result->getTotalAmount());
+        self::assertSame($expected, $result->getTotalAmount());
     }
 
     /**
@@ -295,10 +295,10 @@ final class PaymentSlipParserTest extends TestCase
             sprintf(' :                      : 1234567 A : MME TEST ALPHA           : %s : %s :       42,00:       0,00:      42,00 :', $month, $month),
         ));
 
-        $this->assertCount(1, $result->getLines());
+        self::assertCount(1, $result->getLines());
         $line = $result->getLines()[0];
-        $this->assertEquals(new DateTimeImmutable($expectedDate), $line->getStartDate());
-        $this->assertEquals(new DateTimeImmutable($expectedDate), $line->getEndDate());
+        self::assertEquals(new DateTimeImmutable($expectedDate), $line->getStartDate());
+        self::assertEquals(new DateTimeImmutable($expectedDate), $line->getEndDate());
     }
 
     /**
@@ -368,8 +368,8 @@ final class PaymentSlipParserTest extends TestCase
             ),
         ]));
 
-        $this->assertEquals(new DateTimeImmutable('2024-02-29 00:00:00'), $result->getProcessingDate());
-        $this->assertEquals(new DateTimeImmutable('2024-01-31 00:00:00'), $result->getPaymentDate());
+        self::assertEquals(new DateTimeImmutable('2024-02-29 00:00:00'), $result->getProcessingDate());
+        self::assertEquals(new DateTimeImmutable('2024-01-31 00:00:00'), $result->getPaymentDate());
     }
 
     #[DataProvider('provideInvalidMetadataDates')]
@@ -426,11 +426,11 @@ final class PaymentSlipParserTest extends TestCase
             $parser->parse(self::buildContent(
                 ' :                      : 1234567 A : MME TEST ALPHA           : XX XXXX : 01 2022 :       42,00:       0,00:      42,00 :',
             ));
-            $this->fail('A ParseException should have been thrown');
+            self::fail('A ParseException should have been thrown');
         } catch (ParseException $e) {
-            $this->assertSame('CAF Row n°1 : "XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getMessage());
-            $this->assertInstanceOf(ParseException::class, $e->getPrevious());
-            $this->assertSame('"XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getPrevious()->getMessage());
+            self::assertSame('CAF Row n°1 : "XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getMessage());
+            self::assertInstanceOf(ParseException::class, $e->getPrevious());
+            self::assertSame('"XX XXXX" date value could not be parsed, expected format is "m Y"', $e->getPrevious()->getMessage());
         }
     }
 

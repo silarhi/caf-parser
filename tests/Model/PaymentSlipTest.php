@@ -28,7 +28,7 @@ final class PaymentSlipTest extends TestCase
             ->addLine($first)
             ->addLine($second);
 
-        $this->assertSame([$first, $second], $paymentSlip->getLines());
+        self::assertSame([$first, $second], $paymentSlip->getLines());
     }
 
     public function testSetLinesReplacesExistingLines(): void
@@ -38,9 +38,9 @@ final class PaymentSlipTest extends TestCase
 
         $paymentSlip = (new PaymentSlip())->addLine($existing);
 
-        $this->assertSame($paymentSlip, $paymentSlip->setLines([$replacement]));
-        $this->assertSame([$replacement], $paymentSlip->getLines());
+        self::assertSame($paymentSlip, $paymentSlip->setLines([$replacement]));
+        self::assertSame([$replacement], $paymentSlip->getLines());
 
-        $this->assertSame([], $paymentSlip->setLines([])->getLines());
+        self::assertSame([], $paymentSlip->setLines([])->getLines());
     }
 }

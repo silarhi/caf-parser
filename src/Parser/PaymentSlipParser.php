@@ -62,7 +62,8 @@ final class PaymentSlipParser
      */
     public function parse(string $content): PaymentSlip
     {
-        if (!preg_match_all(self::TABLE_CONTENT_REGEX, $content, $matches, \PREG_SET_ORDER)) {
+        $matchCount = preg_match_all(self::TABLE_CONTENT_REGEX, $content, $matches, \PREG_SET_ORDER);
+        if (false === $matchCount || 0 === $matchCount) {
             throw new ParseException('Input CAF LA44 could not be parsed');
         }
 
@@ -140,7 +141,7 @@ final class PaymentSlipParser
 
         // Out of range values (e.g. "13 2021" or "31 02 2021") are parsed with a warning and silently rolled over
         $errors = DateTimeImmutable::getLastErrors();
-        if (!$result || (false !== $errors && $errors['warning_count'] > 0)) {
+        if (false === $result || (false !== $errors && $errors['warning_count'] > 0)) {
             throw new ParseException(sprintf('"%s" date value could not be parsed, expected format is "%s"', $input, $format));
         }
 
@@ -150,17 +151,17 @@ final class PaymentSlipParser
     private function parseMetadata(string $content, PaymentSlip $paymentSlip): void
     {
         // Processing date
-        if (preg_match(self::PROCESSING_DATE_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::PROCESSING_DATE_REGEX, $content, $matches)) {
             $paymentSlip->setProcessingDate($this->getFullDateValue($matches[1]));
         }
 
         // Payment date
-        if (preg_match(self::PAYMENT_DATE_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::PAYMENT_DATE_REGEX, $content, $matches)) {
             $paymentSlip->setPaymentDate($this->getFullDateValue($matches[1]));
         }
 
         // CAF name
-        if (preg_match(self::CAF_NAME_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::CAF_NAME_REGEX, $content, $matches)) {
             $cafName = trim($matches[1] . ' ' . trim($matches[2]));
             $paymentSlip->setCafName($cafName);
         }
@@ -168,10 +169,10 @@ final class PaymentSlipParser
         // CAF address
         $cafStreet = null;
         $cafCity = null;
-        if (preg_match(self::CAF_STREET_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::CAF_STREET_REGEX, $content, $matches)) {
             $cafStreet = trim($matches[1]);
         }
-        if (preg_match(self::CAF_CITY_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::CAF_CITY_REGEX, $content, $matches)) {
             $cafCity = trim($matches[1]);
         }
         if (null !== $cafStreet && null !== $cafCity) {
@@ -179,30 +180,30 @@ final class PaymentSlipParser
         }
 
         // Recipient name
-        if (preg_match(self::RECIPIENT_NAME_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::RECIPIENT_NAME_REGEX, $content, $matches)) {
             $paymentSlip->setRecipientName(trim($matches[1]));
         }
 
         // Recipient address
-        if (preg_match(self::RECIPIENT_ADDRESS_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::RECIPIENT_ADDRESS_REGEX, $content, $matches)) {
             $recipientAddress = trim($matches[1]) . ', ' . trim($matches[2]);
             $paymentSlip->setRecipientAddress($recipientAddress);
         }
 
         // Reference
-        if (preg_match(self::REFERENCE_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::REFERENCE_REGEX, $content, $matches)) {
             $paymentSlip->setReference(trim($matches[1]));
         }
 
         // Bank references (BIC and IBAN)
-        if (preg_match(self::BANK_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::BANK_REGEX, $content, $matches)) {
             $paymentSlip->setBic(trim($matches[1]));
             $iban = preg_replace('/\s+/', '', $matches[2]);
             $paymentSlip->setIban($iban);
         }
 
         // Total amount
-        if (preg_match(self::TOTAL_REGEX, $content, $matches)) {
+        if (1 === preg_match(self::TOTAL_REGEX, $content, $matches)) {
             $paymentSlip->setTotalAmount($this->getAmountValue($matches[1]));
         }
     }
