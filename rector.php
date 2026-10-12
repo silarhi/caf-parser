@@ -12,6 +12,7 @@ declare(strict_types=1);
  */
 
 use Rector\Config\RectorConfig;
+use Rector\Php80\Rector\NotIdentical\StrContainsRector;
 
 return RectorConfig::configure()
     ->withImportNames()
@@ -23,4 +24,9 @@ return RectorConfig::configure()
     ->withPhpSets()
     ->withComposerBased(
         phpunit: true
-    );
+    )
+    ->withSkip([
+        // str_contains() has no offset: the rule rewrites strpos($haystack, $needle, $offset) into
+        // str_contains(substr($haystack, $offset), $needle), copying the rest of the file
+        StrContainsRector::class => [__DIR__ . '/src/Parser/PaymentSlipParser.php'],
+    ]);
