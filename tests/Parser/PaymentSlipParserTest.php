@@ -23,6 +23,7 @@ use Silarhi\Caf\Model\PaymentSlipLine;
 use Silarhi\Caf\Parser\PaymentSlipParser;
 
 use function sprintf;
+use function strlen;
 
 final class PaymentSlipParserTest extends TestCase
 {
@@ -318,11 +319,44 @@ final class PaymentSlipParserTest extends TestCase
         yield 'dot decimal separator with space thousands separator' => ['    1 298.50 ', 1298.50];
         yield 'dot decimal separator with no-break space thousands separator' => ["    1\u{00A0}298.50 ", 1298.50];
         yield 'dot decimal separator with narrow no-break space thousands separator' => ["    1\u{202F}298.50 ", 1298.50];
+        yield 'comma thousands separator' => ['    1,298.50 ', 1298.50];
+        yield 'several comma thousands separators' => [' 12,345,678.90 ', 12345678.90];
+        yield 'several dot thousands separators without decimals' => ['   12.345.678 ', 12345678.00];
+        yield 'several comma thousands separators without decimals' => ['   12,345,678 ', 12345678.00];
+        yield 'single comma followed by 3 digits' => ['        1,298 ', 1.298];
+        yield 'single dot followed by 3 digits' => ['        1.298 ', 1.298];
+        yield 'negative' => ['      -12,50 ', -12.50];
+    }
+
+    #[DataProvider('provideInvalidAmounts')]
+    public function testInvalidLineAmount(string $amount): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage(sprintf('CAF Row n°2 : "%s" amount value could not be parsed', trim($amount)));
+
+        $parser = new PaymentSlipParser();
+        $parser->parse(self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+            sprintf(' :                      : 7654321 B : MR TEST BETA             : 01 2022 : 01 2022 :       10,00:       0,00:%s:', $amount),
+        ));
     }
 
     /**
-     * TOTAL_REGEX only accepts digits, commas, dots and ASCII whitespaces in the total amount.
+     * Amounts that a float cast would silently truncate.
+     *
+     * @return iterable<string, array{string}>
      */
+    public static function provideInvalidAmounts(): iterable
+    {
+        yield 'empty' => ['            '];
+        yield 'letters' => ['        ABC '];
+        yield 'same thousands and decimal separator' => ['    1.298.50 '];
+        yield 'two decimal separators' => ['    1,298,50 '];
+        yield 'thousands separator not grouping 3 digits' => ['    12.34,50 '];
+        yield 'thousands separator after the decimal separator' => ['    1,298.5,0 '];
+        yield 'trailing minus sign' => ['      12,50- '];
+    }
+
     #[DataProvider('provideTotalAmounts')]
     public function testParsingTotalAmount(string $total, float $expected): void
     {
@@ -348,6 +382,84 @@ final class PaymentSlipParserTest extends TestCase
         yield 'dot decimal separator' => ['        1298.00', 1298.00];
         yield 'dot decimal separator with space thousands separator' => ['       1 298.00', 1298.00];
         yield 'without decimals' => ['           1298', 1298.00];
+        yield 'no-break space thousands separator' => ["       1\u{00A0}298,00", 1298.00];
+        yield 'narrow no-break space thousands separator' => ["       1\u{202F}298,00", 1298.00];
+        yield 'comma thousands separator' => ['       1,298.50', 1298.50];
+        yield 'several comma thousands separators' => ['  12,345,678.90', 12345678.90];
+    }
+
+    public function testInvalidTotalAmount(): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('"1.298.50" amount value could not be parsed');
+
+        $parser = new PaymentSlipParser();
+        $content = self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        );
+        $parser->parse(str_replace('TOTAL :', 'TOTAL :        1.298.50 :', $content));
+    }
+
+    public function testBlankTotalAmountIsIgnored(): void
+    {
+        $parser = new PaymentSlipParser();
+        $content = self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        );
+        $result = $parser->parse(str_replace('TOTAL :', 'TOTAL :                 :', $content));
+
+        self::assertNull($result->getTotalAmount());
+    }
+
+    /**
+     * Each header value replaces its counterpart in the caf_LA44.txt fixture, column alignment included.
+     */
+    #[DataProvider('provideHeaders')]
+    public function testParsingHeader(string $search, string $replace, string $field, string $expected): void
+    {
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
+        self::assertNotFalse($content);
+        self::assertStringContainsString($search, $content);
+        $replace = str_pad($replace, strlen($search));
+
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(str_replace($search, $replace, $content));
+
+        $fields = [
+            'cafName' => $result->getCafName(),
+            'cafAddress' => $result->getCafAddress(),
+            'recipientName' => $result->getRecipientName(),
+            'recipientAddress' => $result->getRecipientAddress(),
+        ];
+        self::assertSame($expected, $fields[$field]);
+    }
+
+    /**
+     * @return iterable<string, array{string, string, string, string}>
+     */
+    public static function provideHeaders(): iterable
+    {
+        $cafStreet = ' 24 RUE PIERRE PAUL RIQUET   ';
+        $cafCity = ' 31046 TOULOUSE CEDEX 9   ';
+        $cafName = ' DE HAUTE GARONNE   ';
+        $recipientName = '    SCI SCITEST';
+        $recipientStreet = '    34 RUE DES ALOUETTES';
+        $recipientCity = '    81100 CASTRES';
+
+        yield 'CAF street with an N after RUE' => [$cafStreet, ' 12 RUE DU PONT', 'cafAddress', '12 RUE DU PONT, 31046 TOULOUSE CEDEX 9'];
+        yield 'CAF street on an avenue' => [$cafStreet, ' 8 AVENUE DES CANUTS', 'cafAddress', '8 AVENUE DES CANUTS, 31046 TOULOUSE CEDEX 9'];
+        yield 'CAF street on a boulevard' => [$cafStreet, ' 2 BOULEVARD NOTRE-DAME', 'cafAddress', '2 BOULEVARD NOTRE-DAME, 31046 TOULOUSE CEDEX 9'];
+        yield 'CAF street without number' => [$cafStreet, ' PLACE DE LA GARE', 'cafAddress', 'PLACE DE LA GARE, 31046 TOULOUSE CEDEX 9'];
+        yield 'CAF city with a T' => [$cafCity, ' 42000 SAINT ETIENNE', 'cafAddress', '24 RUE PIERRE PAUL RIQUET, 42000 SAINT ETIENNE'];
+        yield 'CAF city with a hyphen' => [$cafCity, ' 42000 SAINT-ETIENNE', 'cafAddress', '24 RUE PIERRE PAUL RIQUET, 42000 SAINT-ETIENNE'];
+        yield 'CAF name with an apostrophe' => [$cafName, " DE L'AIN", 'cafName', "CAISSE D'ALLOCATIONS FAMILIALES DE L'AIN"];
+        yield 'CAF name with hyphens' => [$cafName, ' DE SEINE-SAINT-DENIS', 'cafName', "CAISSE D'ALLOCATIONS FAMILIALES DE SEINE-SAINT-DENIS"];
+        yield 'recipient name with an apostrophe' => [$recipientName, "    SCI L'ETOILE", 'recipientName', "SCI L'ETOILE"];
+        yield 'recipient name with an ampersand' => [$recipientName, '    DUPONT & FILS', 'recipientName', 'DUPONT & FILS'];
+        yield 'recipient name with lowercase letters' => [$recipientName, '    Mme Dupont', 'recipientName', 'Mme Dupont'];
+        yield 'recipient street with digits' => [$recipientStreet, '    3 RUE DU 11 NOVEMBRE', 'recipientAddress', '3 RUE DU 11 NOVEMBRE, 81100 CASTRES'];
+        yield 'recipient street without number' => [$recipientStreet, '    LIEU-DIT LES PINS', 'recipientAddress', 'LIEU-DIT LES PINS, 81100 CASTRES'];
+        yield 'recipient city with a hyphen and a CEDEX number' => [$recipientCity, '    42000 SAINT-ETIENNE CEDEX 2', 'recipientAddress', '34 RUE DES ALOUETTES, 42000 SAINT-ETIENNE CEDEX 2'];
     }
 
     /**

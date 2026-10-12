@@ -39,24 +39,33 @@ final class PaymentSlipParser
 
     private const PAYMENT_DATE_REGEX = '/BORDEREAU DE PAIEMENT.*DU\s+(\d{2}\s+\d{2}\s+\d{4})/';
 
-    private const CAF_NAME_REGEX = '/^\s*(CAISSE D\'ALLOCATIONS FAMILIALES)\s*.*\n\s*([A-ZÀ-Ü\s]+?)\s{2,}/m';
+    // 2nd line of the CAF name, e.g. "DE HAUTE GARONNE", "DE L'AIN" or "DE SEINE-SAINT-DENIS"
+    private const CAF_NAME_REGEX = '/^\s*(CAISSE D\'ALLOCATIONS FAMILIALES)\s*.*\n\s*([A-ZÀ-Ü\s\'\-]+?)\s{2,}/m';
 
-    private const CAF_STREET_REGEX = '/(\d+\s+RUE[^N]+)NUMERO DE PRODUIT/';
+    // The CAF street and city are what precedes their label on the same line
+    private const CAF_STREET_REGEX = '/^[ \t]*(\S.*?)[ \t]+NUMERO DE PRODUIT/m';
 
-    private const CAF_CITY_REGEX = '/(\d{5}\s+\w[^T]+)TYPE DE TRAITEMENT/';
+    private const CAF_CITY_REGEX = '/^[ \t]*(\d{5}[ \t]+\S.*?)[ \t]+TYPE DE TRAITEMENT/m';
 
-    private const RECIPIENT_NAME_REGEX = '/^\s{20,}([A-ZÀ-Ü][A-ZÀ-Ü0-9\s\-\.]+?)\s*$/m';
+    private const RECIPIENT_NAME_REGEX = '/^\s{20,}([A-Za-zÀ-Ü][A-Za-zÀ-Ü0-9\s\-\.\'&]+?)\s*$/m';
 
-    private const RECIPIENT_ADDRESS_REGEX = '/NM REFERENCE.*?\s{2,}(\d+\s+[A-ZÀ-Ü\s\']+?)\s*\n\s{20,}(\d{5}\s+[A-ZÀ-Ü\s]+?)\s*$/m';
+    // The recipient street ends the reference line, the next line starts with the postal code
+    private const RECIPIENT_ADDRESS_REGEX = '/NM REFERENCE\s*:\s*\d+\s+\d+[ \t]{2,}(\S.*?)\s*\n\s{20,}(\d{5}[ \t]+\S.*?)\s*$/m';
 
     private const REFERENCE_REGEX = '/NM REFERENCE\s*:\s*(\d+\s+\d+)/';
 
     private const BANK_REGEX = '/^\s*VB\s+([A-Z0-9]+)\s+(FR\d{2}[\s0-9]+)/m';
 
-    private const TOTAL_REGEX = '/TOTAL\s*:\s*([\d\s,.]+)\s*:/';
+    // Digits, dots, commas and spaces, including UTF-8 no-break and narrow no-break spaces
+    private const TOTAL_REGEX = '/TOTAL\s*:\s*(\d(?:[\d\s,.]|\xC2\xA0|\xE2\x80\xAF)*)\s*:/';
 
     // Space thousands separators of amounts: whitespaces, including UTF-8 no-break and narrow no-break spaces
     private const AMOUNT_SPACES_REGEX = '/\s|\xC2\xA0|\xE2\x80\xAF/';
+
+    // Once spaces are removed: either digits with at most one dot or comma, which is the decimal separator
+    // ("1298,50", "1298.50", "1,298"), or digits grouped by 3 with dots or commas, then optionally the other one
+    // as decimal separator ("12.345.678", "1.298,50", "1,298.50").
+    private const AMOUNT_REGEX = '/^-?(?:\d+(?:[.,]\d+)?|\d{1,3}(?<thousands>[.,])\d{3}(?:\k<thousands>\d{3})*(?:(?!\k<thousands>)[.,]\d+)?)$/';
 
     public const DATE_FORMAT = 'm Y';
 
@@ -98,16 +107,15 @@ final class PaymentSlipParser
                 ->setBeneficiaryName(trim($values[3]));
 
             try {
-                $paymentSlipLine->setStartDate($this->getDateValue(trim($values[4])));
-                $paymentSlipLine->setEndDate($this->getDateValue(trim($values[5])));
+                $paymentSlipLine
+                    ->setStartDate($this->getDateValue(trim($values[4])))
+                    ->setEndDate($this->getDateValue(trim($values[5])))
+                    ->setGrossAmount($this->getAmountValue($values[6]))
+                    ->setDeduction($this->getAmountValue($values[7]))
+                    ->setNetAmount($this->getAmountValue($values[8]));
             } catch (ParseException $e) {
                 throw new ParseException(sprintf('CAF Row n°%d : %s', $i + 1, $e->getMessage()), $e->getCode(), $e);
             }
-
-            $paymentSlipLine
-                ->setGrossAmount($this->getAmountValue(trim($values[6])))
-                ->setDeduction($this->getAmountValue(trim($values[7])))
-                ->setNetAmount($this->getAmountValue(trim($values[8])));
 
             $paymentSlip->addLine($paymentSlipLine);
         }
@@ -154,15 +162,18 @@ final class PaymentSlipParser
 
     private function getAmountValue(string $input): float
     {
-        $input = preg_replace(self::AMOUNT_SPACES_REGEX, '', $input) ?? $input;
+        $amount = preg_replace(self::AMOUNT_SPACES_REGEX, '', $input) ?? $input;
 
-        // French formatting ("1.298,00"): the comma is the decimal separator and dots are thousands separators.
-        // Without a comma, a dot is the decimal separator ("1298.00").
-        if (str_contains($input, ',')) {
-            $input = str_replace(['.', ','], ['', '.'], $input);
+        // Anything else ("", "1.298.50", "12,00-") would be silently truncated by the float cast
+        if (1 !== preg_match(self::AMOUNT_REGEX, $amount, $matches)) {
+            throw new ParseException(sprintf('"%s" amount value could not be parsed', trim($input)));
         }
 
-        return (float) $input;
+        if ('' !== ($matches['thousands'] ?? '')) {
+            $amount = str_replace($matches['thousands'], '', $amount);
+        }
+
+        return (float) str_replace(',', '.', $amount);
     }
 
     private function getDateValue(string $input): DateTimeInterface
