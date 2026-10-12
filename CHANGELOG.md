@@ -41,16 +41,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **BC break:** PHP 8.2 or later is required.
 - **BC break:** `PaymentSlipParser`, `PaymentSlip`, `PaymentSlipLine` and `ParseException` are `final`: wrap them instead of extending them.
 
-### Fixed
-
-- `PaymentSlipLine::getReference()` returns `null` again on a line whose reference was never set, instead of throwing an `Error`.
-
 ## [2.0.0] - 2024-02-09
 
 ### Changed
 
 - **BC break:** PHP 8.0 or later is required (PHP 7.2 to 7.4 are no longer supported).
-- The properties of `PaymentSlipLine` are typed: `getReference()` on a line whose reference was never set throws an `Error` instead of returning `null`. Lines returned by the parser always have one.
 
 ## [1.0.1] - 2022-01-07
 
