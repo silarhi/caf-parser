@@ -5,6 +5,25 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - Unreleased
+
+### Added
+
+- Amounts formatted the English way are read: with both separators, the last one is the decimal separator (`1,298.50` gives `1298.5`, as `1.298,50` does), and a separator repeated without decimals is a thousands separator (`12,345,678` and `12.345.678` give `12345678.0`). A single comma or dot is still the decimal separator: `1,298` and `1.298` give `1.298`.
+
+### Changed
+
+- A malformed amount throws `ParseException` instead of being silently truncated: `1,298.50` gave `1.2985` and `1.298.50` gave `1.298`. A row amount that is empty, has letters, two decimal separators or a thousands separator not grouping 3 digits throws `CAF Row n°<row> : "<amount>" amount value could not be parsed`; a malformed total throws `"<amount>" amount value could not be parsed`.
+- A blank total (`TOTAL :          :`) gives a `null` `getTotalAmount()` instead of `0.0`, like a missing one.
+
+### Fixed
+
+- `getTotalAmount()` returned `null` when the total used no-break or narrow no-break spaces as thousands separators (`1 298,00`), which 3.1.1 announced but only applied to the line amounts.
+- `getCafAddress()` returned `null` for streets with an `N` after `RUE` (`12 RUE DU PONT`) or not of the form `<number> RUE` (`8 AVENUE DES CANUTS`, `PLACE DE LA GARE`), and for cities with a `T` after their first letter (`42000 SAINT ETIENNE`). The street and the city are now whatever precedes their label on their line, the city starting with its postal code.
+- `getCafName()` returned `null` when the name had an apostrophe or a hyphen (`DE L'AIN`, `DE SEINE-SAINT-DENIS`).
+- `getRecipientName()` returned `null` when the name had an apostrophe, an ampersand or lowercase letters (`SCI L'ETOILE`, `DUPONT & FILS`, `Mme Dupont`).
+- `getRecipientAddress()` returned `null` when the street had no leading number or other digits (`LIEU-DIT LES PINS`, `3 RUE DU 11 NOVEMBRE`), or the city had a hyphen or digits (`42000 SAINT-ETIENNE CEDEX 2`).
+
 ## [3.1.2] - 2026-10-12
 
 ### Changed
@@ -57,6 +76,7 @@ No functional changes: the test fixtures were anonymised.
 
 - `PaymentSlipParser::parse()` reads the content of a CAF LA44ZZ payment slip and returns a `PaymentSlip` whose `PaymentSlipLine`s carry the reference, the beneficiary reference and name, the start and end months, and the gross, deduction and net amounts. It throws `ParseException` when the table, a row or a date cannot be parsed. Requires PHP 7.2 or later.
 
+[3.2.0]: https://github.com/silarhi/caf-parser/compare/3.1.2...main
 [3.1.2]: https://github.com/silarhi/caf-parser/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/silarhi/caf-parser/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/silarhi/caf-parser/compare/3.0.0...3.1.0

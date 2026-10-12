@@ -41,9 +41,9 @@
 - **LA44ZZ payment slips** — parses every payment line of the table (beneficiary, period, gross, deduction and net amounts)
 - **Slip metadata** — processing and payment dates, CAF name and address, recipient name and address, reference, BIC, IBAN and total
 - **Typed results** — dates as `DateTimeInterface`, amounts as `float`
-- **French amount formats** — a comma, when present, is the decimal separator; spaces, no-break spaces and dots are
-  thousands separators (`1 298,50`, `1.298,50` and `1298.50` all give `1298.5`)
-- **Strict validation** — malformed rows and invalid or out-of-range dates throw a `ParseException`
+- **French and English amount formats** — spaces and no-break spaces are thousands separators; a single comma or dot
+  is the decimal separator, otherwise the last one is (`1 298,50`, `1.298,50`, `1,298.50` and `1298.50` all give `1298.5`)
+- **Strict validation** — malformed rows, malformed amounts and invalid or out-of-range dates throw a `ParseException`
 - **No dependencies** — plain PHP, works with Windows (`\r\n`) and Unix line endings
 
 ## Requirements
@@ -99,8 +99,9 @@ midnight), and `getGrossAmount()`, `getDeduction()` and `getNetAmount()` as floa
 ### Error handling
 
 `parse()` throws a `ParseException` when the content has no LA44ZZ payment table, when a row does not have the expected
-columns, or when a date (row period or header date) is invalid or out of range: `13 2021` or `31 02 2021` are rejected
-instead of being rolled over. Row errors carry the row number, e.g. `CAF Row n°2 could not be parsed`.
+columns, when an amount is malformed (`1.298.50`), or when a date (row period or header date) is invalid or out of
+range: `13 2021` or `31 02 2021` are rejected instead of being rolled over. Row errors carry the row number, e.g.
+`CAF Row n°2 could not be parsed`.
 
 ```php
 use Silarhi\Caf\Exceptions\ParseException;
