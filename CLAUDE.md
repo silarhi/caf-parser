@@ -40,7 +40,7 @@ vendor/bin/rector process
 
 ### Exceptions (`src/Exceptions/`)
 
-- `ParseException`: Thrown when parsing fails (invalid format, unparseable rows, bad dates)
+- `ParseException`: Thrown when parsing fails (invalid format, unparseable rows, bad dates, malformed amounts)
 
 ## Code Standards
 
@@ -49,6 +49,19 @@ vendor/bin/rector process
 - Symfony PHP-CS-Fixer ruleset with `@Symfony:risky`
 - `declare(strict_types=1)` in all files
 - Header comment required in all source files
+
+## API Documentation
+
+**Always update documentation when adding or modifying public API**: the parser and its constants, the models and
+their getters, exception messages, parsing rules (dates, amounts, metadata).
+
+1. **`docs/`** — the documentation site (caf-parser.silarhi.dev, Starlight with `@silarhi/docs-kit`): guides and
+   reference. Keep `README.md` short: update its features list or quick start only when they change.
+2. **`docs/examples/`** — the example LA44ZZ files (made-up data only, never a real slip). Run
+   `php docs/scripts/render-examples.php` after changing the parser or an example, and commit
+   `docs/src/data/examples/`: the CI runs it with `--check`.
+3. **`CLAUDE.md`** — Architecture.
+4. **`CHANGELOG.md`** — see below.
 
 ## Changelog & Releases
 

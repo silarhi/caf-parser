@@ -1,0 +1,2 @@
+// Silarhi\Caf\Exceptions\ParseException
+$e->getMessage(); // "CAF Row n°2 could not be parsed"

@@ -34,23 +34,23 @@
     Turn the plain-text "bordereau de paiement" sent by the Caisse d'Allocations Familiales into typed PHP objects.
 </p>
 
+<p align="center">
+    📖 <a href="https://caf-parser.silarhi.dev"><strong>Documentation</strong></a>
+</p>
+
 ---
 
 ## Features
 
-- **LA44ZZ payment slips** — parses every payment line of the table (beneficiary, period, gross, deduction and net amounts)
-- **Slip metadata** — processing and payment dates, CAF name and address, recipient name and address, reference, BIC, IBAN and total
-- **Typed results** — dates as `DateTimeInterface`, amounts as `float`
-- **French and English amount formats** — spaces and no-break spaces are thousands separators; a single comma or dot
-  is the decimal separator, otherwise the last one is (`1 298,50`, `1.298,50`, `1,298.50` and `1298.50` all give `1298.5`)
-- **Strict validation** — malformed rows, malformed amounts and invalid or out-of-range dates throw a `ParseException`
-- **No dependencies** — plain PHP, works with Windows (`\r\n`) and Unix line endings
+- **LA44ZZ payment slips**: every payment line of the table (beneficiary, period, gross, deduction and net amounts)
+- **Slip metadata**: processing and payment dates, CAF name and address, recipient name and address, reference, BIC, IBAN and total
+- **Typed results**: dates as `DateTimeInterface`, amounts as `float`, French and English formats such as `1 298,50` or `1,298.50`
+- **Strict validation**: malformed rows, malformed amounts and invalid or out-of-range dates throw a `ParseException`
+- **No dependencies**: plain PHP, Windows (`\r\n`) and Unix line endings
 
 ## Requirements
 
-| Dependency | Version |
-| ---------- | ------- |
-| PHP        | 8.2+    |
+- PHP 8.2+
 
 ## Installation
 
@@ -58,94 +58,41 @@
 composer require silarhi/caf-parser
 ```
 
-## Usage
-
-### Parse a LA44ZZ file
+## Quick start
 
 ```php
 use Silarhi\Caf\Parser\PaymentSlipParser;
 
-$parser = new PaymentSlipParser();
-$paymentSlip = $parser->parse(file_get_contents('/path/to/LA44ZZ.txt'));
+$paymentSlip = (new PaymentSlipParser())->parse(file_get_contents('/path/to/LA44ZZ.txt'));
+
+$paymentSlip->getPaymentDate(); // DateTimeInterface
+$paymentSlip->getTotalAmount(); // e.g. 600.0
 
 foreach ($paymentSlip->getLines() as $line) {
-    $line->getBeneficiaryReference(); // e.g. "1111111 J"
-    $line->getBeneficiaryName();      // e.g. "MME JESUS"
-    $line->getStartDate();            // DateTimeInterface, 1st of the month at midnight
-    $line->getEndDate();              // DateTimeInterface, 1st of the month at midnight
-    $line->getNetAmount();            // e.g. 33.0
+    $line->getBeneficiaryName(); // e.g. "MME EXEMPLE ALICE"
+    $line->getNetAmount();       // e.g. 312.0
 }
 ```
 
-### What you get
+`parse()` throws a `ParseException` when the content is not a LA44ZZ payment slip, or a row, an amount or a date is invalid.
 
-`PaymentSlip` holds the slip metadata and its lines. Metadata getters return `null` when the information is missing from
-the file:
+## Documentation
 
-| Getter                                        | Type                 | Notes                                                   |
-| --------------------------------------------- | -------------------- | ------------------------------------------------------- |
-| `getProcessingDate()`, `getPaymentDate()`     | `?DateTimeInterface` | Full dates (`d m Y`), at midnight                       |
-| `getCafName()`, `getCafAddress()`             | `?string`            | e.g. `CAISSE D'ALLOCATIONS FAMILIALES DE HAUTE GARONNE` |
-| `getRecipientName()`, `getRecipientAddress()` | `?string`            | The landlord receiving the payment                      |
-| `getReference()`                              | `?string`            | `NM REFERENCE` of the slip                              |
-| `getBic()`, `getIban()`                       | `?string`            | IBAN without spaces                                     |
-| `getTotalAmount()`                            | `?float`             |                                                         |
-| `getLines()`                                  | `PaymentSlipLine[]`  |                                                         |
+Everything else is on **[caf-parser.silarhi.dev](https://caf-parser.silarhi.dev)**:
 
-Each `PaymentSlipLine` exposes `getReference()` (housing/loan reference, may be empty), `getBeneficiaryReference()`,
-`getBeneficiaryName()`, `getStartDate()` and `getEndDate()` (the month of the period, as the 1st of the month at
-midnight), and `getGrossAmount()`, `getDeduction()` and `getNetAmount()` as floats.
-
-### Error handling
-
-`parse()` throws a `ParseException` when the content has no LA44ZZ payment table, when a row does not have the expected
-columns, when an amount is malformed (`1.298.50`), or when a date (row period or header date) is invalid or out of
-range: `13 2021` or `31 02 2021` are rejected instead of being rolled over. Row errors carry the row number, e.g.
-`CAF Row n°2 could not be parsed`.
-
-```php
-use Silarhi\Caf\Exceptions\ParseException;
-
-try {
-    $paymentSlip = $parser->parse($content);
-} catch (ParseException $e) {
-    // Not a LA44ZZ payment slip, malformed row or invalid date
-}
-```
-
-## Testing & Quality
-
-```bash
-# Install dependencies
-composer install
-
-# Run tests
-vendor/bin/phpunit
-
-# Static analysis (level: max)
-vendor/bin/phpstan analyse
-
-# Code style check
-vendor/bin/php-cs-fixer fix --dry-run --diff
-
-# Code style fix
-vendor/bin/php-cs-fixer fix
-
-# Code modernization check
-vendor/bin/rector process --dry-run
-```
+- [Installation](https://caf-parser.silarhi.dev/getting-started/installation/) and [quick start](https://caf-parser.silarhi.dev/getting-started/quick-start/)
+- [LA44ZZ files](https://caf-parser.silarhi.dev/guides/la44zz-files/): what a slip holds and which parts are read
+- [Parsing](https://caf-parser.silarhi.dev/guides/parsing/): the table, dates, amounts and metadata
+- [Error handling](https://caf-parser.silarhi.dev/guides/error-handling/): when `parse()` throws, and its messages
+- Reference: [`PaymentSlipParser`](https://caf-parser.silarhi.dev/reference/parser/), [parsed objects](https://caf-parser.silarhi.dev/reference/models/) (`PaymentSlip`, `PaymentSlipLine`), [exceptions](https://caf-parser.silarhi.dev/reference/exceptions/)
 
 ## Contributing
 
-Contributions are welcome! Please make sure your changes pass all quality checks before submitting a pull request:
-
-```bash
-vendor/bin/phpunit && vendor/bin/phpstan analyse && vendor/bin/php-cs-fixer fix --dry-run --diff
-```
+See [CONTRIBUTING.md](CONTRIBUTING.md). Release notes are in [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 
-MIT License. See [LICENSE](LICENSE) for details.
+Released under the [MIT License](LICENSE).
 
 ---
 

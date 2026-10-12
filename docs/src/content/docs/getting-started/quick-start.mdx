@@ -1,0 +1,39 @@
+---
+title: Quick start
+description: Parse a LA44ZZ file and read its payment lines.
+sidebar:
+    order: 2
+---
+
+import Example from '../../../components/Example.astro'
+
+## Parse a LA44ZZ file
+
+Give the content of the file to `PaymentSlipParser::parse()`. It returns a `PaymentSlip`:
+
+```php
+use Silarhi\Caf\Parser\PaymentSlipParser;
+
+$parser = new PaymentSlipParser();
+$paymentSlip = $parser->parse(file_get_contents('/path/to/LA44ZZ.txt'));
+
+foreach ($paymentSlip->getLines() as $line) {
+    $line->getBeneficiaryReference(); // e.g. "1234567 A"
+    $line->getBeneficiaryName();      // e.g. "MME EXEMPLE ALICE"
+    $line->getStartDate();            // DateTimeInterface, 1st of the month at midnight
+    $line->getEndDate();              // DateTimeInterface, 1st of the month at midnight
+    $line->getNetAmount();            // e.g. 312.0
+}
+```
+
+## What you get
+
+Here is a sample slip, with made-up data, and what the parser returns for it:
+
+<Example name="payment-slip" />
+
+The metadata getters of `PaymentSlip` return `null` when the file does not hold the information; the lines always have
+every field. See [parsed objects](/reference/models/) for each getter.
+
+`parse()` throws a `ParseException` when the content is not a LA44ZZ payment slip, or when a row, an amount or a date is invalid:
+see [error handling](/guides/error-handling/).

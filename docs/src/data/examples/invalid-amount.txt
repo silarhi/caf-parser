@@ -1,0 +1,3 @@
+// Silarhi\Caf\Exceptions\ParseException
+$e->getMessage(); // 'CAF Row n°2 : "1.298.50" amount value could not be parsed'
+$e->getPrevious()->getMessage(); // '"1.298.50" amount value could not be parsed'

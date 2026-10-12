@@ -1,0 +1,39 @@
+---
+/**
+ * What the parser returns for an example file, and the file, in two tabs.
+ *
+ *     import Example from '../../../components/Example.astro'
+ *     <Example name="payment-slip" />
+ *
+ * Reads docs/examples/<name>.txt and its output, docs/src/data/examples/<name>.txt
+ * (`php docs/scripts/render-examples.php`).
+ */
+import { Code, TabItem, Tabs } from '@astrojs/starlight/components'
+
+interface Props {
+    name: string
+    /** Text to highlight in the file, e.g. the faulty part of a row. */
+    mark?: string
+}
+
+const files = import.meta.glob<string>('../../examples/*.txt', { query: '?raw', import: 'default', eager: true })
+const outputs = import.meta.glob<string>('../data/examples/*.txt', { query: '?raw', import: 'default', eager: true })
+
+const { name, mark } = Astro.props
+const file = files[`../../examples/${name}.txt`]
+const output = outputs[`../data/examples/${name}.txt`]
+if (file === undefined || output === undefined) {
+    throw new Error(
+        `Example "${name}" not found: add docs/examples/${name}.txt, then run php docs/scripts/render-examples.php`
+    )
+}
+---
+
+<Tabs>
+    <TabItem label="Result">
+        <Code code={output} lang="php" />
+    </TabItem>
+    <TabItem label="LA44ZZ file">
+        <Code code={file} lang="text" title={`${name}.txt`} mark={mark} wrap={false} />
+    </TabItem>
+</Tabs>
