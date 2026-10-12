@@ -1,0 +1,65 @@
+---
+title: LA44ZZ files
+description: What a CAF LA44ZZ payment slip holds, and which parts the parser reads.
+sidebar:
+    order: 1
+---
+
+import { Code } from '@astrojs/starlight/components'
+import Flow from '@silarhi/docs-kit/components/Flow.astro'
+import slip from '../../../../examples/payment-slip.txt?raw'
+
+A LA44ZZ file is a payment slip ("bordereau de paiement") sent by a Caisse d'Allocations Familiales (CAF) as plain
+text. It lists the payments the CAF makes to one recipient, such as a landlord, for several beneficiaries.
+
+This page describes the layout as the parser expects it, from sample files. It is not a specification of the format.
+
+## Layout
+
+Here is a sample slip with made-up data:
+
+<Code code={slip} lang="text" title="payment-slip.txt" wrap={false} />
+
+<Flow
+    caption="The parts of a slip, from top to bottom."
+    steps={[
+        { title: 'CAF header', detail: 'name, address, processing date' },
+        { title: 'Recipient', detail: 'name, address, reference' },
+        { title: 'Payment', detail: 'payment date, bank details' },
+        { title: 'Table', detail: 'one row per payment, total', accent: true },
+    ]}
+/>
+
+### Header
+
+| In the file                                                             | Read as                                                            |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `CAISSE D'ALLOCATIONS FAMILIALES` and the line below                    | `getCafName()`, e.g. `CAISSE D'ALLOCATIONS FAMILIALES DE DOCVILLE` |
+| The street and city lines below the CAF name                            | `getCafAddress()`, joined with `, `                                |
+| `DATE DE TRAITEMENT : 05 02 2026`                                       | `getProcessingDate()`                                              |
+| The block on the right of `NM REFERENCE`                                | `getRecipientName()` and `getRecipientAddress()`                   |
+| `NM REFERENCE: 0000000 0001`                                            | `getReference()`                                                   |
+| `BORDEREAU DE PAIEMENT A.L.  DU     03 02 2026`                         | `getPaymentDate()`                                                 |
+| `VB   TESTFRPP      FR76 0000 …`, below `REFERENCES BANCAIRES BAILLEUR` | `getBic()` and `getIban()` (without spaces)                        |
+
+The other header fields (`NMFP PAGE`, `NUMERO DE PRODUIT`, `TYPE DE TRAITEMENT`, `TEL`, `NATURE DR`) are not read.
+
+### Table
+
+The table is framed by lines of 121 dashes. The column headers come first, then one row per payment, then the total.
+Each row has eight columns separated by `:`:
+
+| Column                     | Meaning                                        | Read as                          |
+| -------------------------- | ---------------------------------------------- | -------------------------------- |
+| `REFERENCES LOGEMENT/PRET` | Housing or loan reference, often empty         | `getReference()`                 |
+| `NUMERO ALLOCATAIRE`       | Beneficiary number                             | `getBeneficiaryReference()`      |
+| `NOM DESTINATAIRE`         | Beneficiary name                               | `getBeneficiaryName()`           |
+| `DATE DEBUT`, `DATE FIN`   | First and last month of the period (`MM YYYY`) | `getStartDate()`, `getEndDate()` |
+| `MONTANT BRUT`             | Gross amount                                   | `getGrossAmount()`               |
+| `RETENUE`                  | Deduction                                      | `getDeduction()`                 |
+| `MONTANT NET`              | Net amount                                     | `getNetAmount()`                 |
+
+The row below the table, `TOTAL :`, gives `getTotalAmount()`. In the sample files, the total is the sum of the net
+amounts and each net amount is the gross amount minus the deduction; the parser does not check either.
+
+See [parsing](/guides/parsing/) for how each value is read.

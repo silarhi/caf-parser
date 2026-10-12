@@ -1,0 +1,90 @@
+---
+title: Parsing
+description: How the parser finds the table, reads the rows, dates and amounts, and fills the slip metadata.
+sidebar:
+    order: 2
+---
+
+import Example from '../../../components/Example.astro'
+
+```php
+use Silarhi\Caf\Parser\PaymentSlipParser;
+
+$parser = new PaymentSlipParser();
+$paymentSlip = $parser->parse($content);
+```
+
+`parse()` takes the content of the file as a string: read it from disk, an upload or a remote storage, the parser never
+opens files. It keeps no state between calls, so one instance can parse any number of files.
+
+## The table
+
+The parser looks for lines of 121 dashes. The rows are the lines between the 2nd and the 3rd of them, and a 4th must
+follow (the total row sits between the 3rd and the 4th). Without these four borders, `parse()` throws
+`Input CAF LA44 could not be parsed`.
+
+Each line between the 2nd and the 3rd borders is a row, split on `:` into exactly ten parts: the eight columns, plus
+what comes before the first `:` and after the last one, which are ignored. Every value is trimmed. A row with another
+number of parts, a blank line in the table or an empty table throws `CAF Row n°<row> could not be parsed`, counting
+rows from 1 at the first row of the table.
+
+Large files are fine: the table is located without regular expressions, and the test suite parses 10,000 rows.
+
+## Dates
+
+| Value                                 | Format                                                             | Result                           |
+| ------------------------------------- | ------------------------------------------------------------------ | -------------------------------- |
+| Row period (`DATE DEBUT`, `DATE FIN`) | `m Y` (`PaymentSlipParser::DATE_FORMAT`), e.g. `01 2026`           | The 1st of the month at midnight |
+| Processing and payment dates          | `d m Y` (`PaymentSlipParser::FULL_DATE_FORMAT`), e.g. `05 02 2026` | That day at midnight             |
+
+Dates are `DateTimeImmutable` instances in the default timezone of PHP; the getters declare `DateTimeInterface`. Each
+line gets its own instances, even when rows share the same month. Several spaces between the parts of a processing or
+payment date are accepted (`29  02  2024`).
+
+Invalid or out-of-range dates throw a `ParseException` instead of rolling over: `13 2021`, `00 2022` or `AB 2022` in a
+row, `31 02 2021` or `29 02 2021` in the header. See [error handling](/guides/error-handling/).
+
+## Amounts
+
+Amounts are returned as `float`. Spaces, no-break spaces and narrow no-break spaces are thousands separators. When the
+amount has a comma, the comma is the decimal separator and dots are thousands separators; without a comma, a dot is the
+decimal separator.
+
+| In the file     | Result       |
+| --------------- | ------------ |
+| `272`           | `272.0`      |
+| `1298,00`       | `1298.0`     |
+| `1 298,50`      | `1298.5`     |
+| `1.298,50`      | `1298.5`     |
+| `1298.50`       | `1298.5`     |
+| `12 345 678,90` | `12345678.9` |
+
+:::caution
+English formats with a comma as thousands separator are not supported: `1,298.50` gives `1.2985`.
+
+The total accepts digits, spaces, dots and commas only: with a no-break space (`1 298,00` written with U+00A0),
+`getTotalAmount()` returns `null`. Line amounts accept them.
+:::
+
+## Metadata
+
+Each metadata field is read on its own, from its label in the header (see [LA44ZZ files](/guides/la44zz-files/)). A
+field the parser does not find stays `null`, and the rows are still parsed. With only the table, every field but the
+total is `null`:
+
+<Example name="table-only" />
+
+The CAF address is set only when both its street and its city lines are found. The patterns come from sample slips, so
+some headers are not recognized:
+
+- the CAF street must start with a number followed by `RUE`, and stops at the first `N` after it: `12 RUE DU PONT`
+  gives a `null` address
+- the CAF city must start with a 5-digit postal code, and stops at the first `T` after its first letter:
+  `42000 SAINT ETIENNE` gives a `null` address
+- the second line of the CAF name accepts uppercase letters and spaces only: `DE L'AIN` gives a `null` CAF name
+- the recipient name accepts uppercase letters, digits, spaces, `-` and `.` only: `SCI L'ETOILE` gives a `null`
+  recipient name
+
+## Line endings
+
+Windows (`\r\n`) and Unix (`\n`) line endings give the same result.

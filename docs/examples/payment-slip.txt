@@ -1,0 +1,36 @@
+ CAISSE D'ALLOCATIONS FAMILIALES                                                                   NMFP PAGE :      1
+ DE DOCVILLE                                                                              DATE DE TRAITEMENT : 05 02 2026
+ 1 RUE DE L EXEMPLE                                                                        NUMERO DE PRODUIT :       LA44
+ 99999 DOCVILLE CEDEX                                                                     TYPE DE TRAITEMENT : DIE
+ TEL :   00 00
+
+
+
+
+
+
+                                                                      SCI EXEMPLE
+ NATURE DR: M  NM REFERENCE: 0000000 0001                             10 RUE DES ESSAIS
+                                                                      99999 DOCVILLE
+
+
+
+
+
+
+
+                             -------------------------------------------------
+                             : BORDEREAU DE PAIEMENT A.L.  DU     03 02 2026 :
+                             -------------------------------------------------
+ REFERENCES BANCAIRES BAILLEUR
+ VB   TESTFRPP      FR76 0000 0000 0000 0000 0000 000
+ -------------------------------------------------------------------------------------------------------------------------
+ :      REFERENCES      :   NUMERO  :       NOM DESTINATAIRE   : DATE    :  DATE   :  MONTANT   : RETENUE   :  MONTANT   :
+ :     LOGEMENT/PRET    :ALLOCATAIRE:                          : DEBUT   :  FIN    :    BRUT    :           :  NET       :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                      : 1234567 A : MME EXEMPLE ALICE        : 01 2026 : 01 2026 :      312,00:       0,00:     312,00 :
+ : 0000000000000        : 2345678 B : MR EXEMPLE BRUNO         : 12 2025 : 01 2026 :      225,50:      25,50:     200,00 :
+ :                      : 3456789 C : MME EXEMPLE CHLOE        : 01 2026 : 01 2026 :       88,00:       0,00:      88,00 :
+ -------------------------------------------------------------------------------------------------------------------------
+ :                                                                                               TOTAL :          600,00 :
+ -------------------------------------------------------------------------------------------------------------------------

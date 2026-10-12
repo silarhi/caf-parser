@@ -50,6 +50,19 @@ vendor/bin/rector process
 - `declare(strict_types=1)` in all files
 - Header comment required in all source files
 
+## API Documentation
+
+**Always update documentation when adding or modifying public API**: the parser and its constants, the models and
+their getters, exception messages, parsing rules (dates, amounts, metadata).
+
+1. **`docs/`** — the documentation site (caf-parser.silarhi.dev, Starlight with `@silarhi/docs-kit`): guides and
+   reference. Keep `README.md` short: update its features list or quick start only when they change.
+2. **`docs/examples/`** — the example LA44ZZ files (made-up data only, never a real slip). Run
+   `php docs/scripts/render-examples.php` after changing the parser or an example, and commit
+   `docs/src/data/examples/`: the CI runs it with `--check`.
+3. **`CLAUDE.md`** — Architecture.
+4. **`CHANGELOG.md`** — see below.
+
 ## Changelog & Releases
 
 - **`CHANGELOG.md`** follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Every user-facing change gets an entry in the top section, titled with the next release, never a bare `[Unreleased]`: the next minor (e.g. `[3.2.0] - Unreleased`), or the next major for a BC break. Prefix breaking changes with **BC break:** and say what users must change. Skip dependency bumps, CI and tooling changes.

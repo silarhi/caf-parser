@@ -5,7 +5,7 @@
     "prettier": "^3.9.10"
   },
   "lint-staged": {
-    "*.md": "prettier --write",
+    "*.{md,mdx}": "prettier --write",
     "*.php": "vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php",
     "composer.json": "composer normalize"
   },

@@ -1,0 +1,41 @@
+$paymentSlip->getProcessingDate();   // DateTimeImmutable '2026-02-05 00:00:00'
+$paymentSlip->getPaymentDate();      // DateTimeImmutable '2026-02-03 00:00:00'
+$paymentSlip->getCafName();          // "CAISSE D'ALLOCATIONS FAMILIALES DE DOCVILLE"
+$paymentSlip->getCafAddress();       // "1 RUE DE L EXEMPLE, 99999 DOCVILLE CEDEX"
+$paymentSlip->getRecipientName();    // "SCI EXEMPLE"
+$paymentSlip->getRecipientAddress(); // "10 RUE DES ESSAIS, 99999 DOCVILLE"
+$paymentSlip->getReference();        // "0000000 0001"
+$paymentSlip->getBic();              // "TESTFRPP"
+$paymentSlip->getIban();             // "FR7600000000000000000000000"
+$paymentSlip->getTotalAmount();      // 600.0
+count($paymentSlip->getLines());     // 3
+
+$line = $paymentSlip->getLines()[0];
+$line->getReference();            // ""
+$line->getBeneficiaryReference(); // "1234567 A"
+$line->getBeneficiaryName();      // "MME EXEMPLE ALICE"
+$line->getStartDate();            // DateTimeImmutable '2026-01-01 00:00:00'
+$line->getEndDate();              // DateTimeImmutable '2026-01-01 00:00:00'
+$line->getGrossAmount();          // 312.0
+$line->getDeduction();            // 0.0
+$line->getNetAmount();            // 312.0
+
+$line = $paymentSlip->getLines()[1];
+$line->getReference();            // "0000000000000"
+$line->getBeneficiaryReference(); // "2345678 B"
+$line->getBeneficiaryName();      // "MR EXEMPLE BRUNO"
+$line->getStartDate();            // DateTimeImmutable '2025-12-01 00:00:00'
+$line->getEndDate();              // DateTimeImmutable '2026-01-01 00:00:00'
+$line->getGrossAmount();          // 225.5
+$line->getDeduction();            // 25.5
+$line->getNetAmount();            // 200.0
+
+$line = $paymentSlip->getLines()[2];
+$line->getReference();            // ""
+$line->getBeneficiaryReference(); // "3456789 C"
+$line->getBeneficiaryName();      // "MME EXEMPLE CHLOE"
+$line->getStartDate();            // DateTimeImmutable '2026-01-01 00:00:00'
+$line->getEndDate();              // DateTimeImmutable '2026-01-01 00:00:00'
+$line->getGrossAmount();          // 88.0
+$line->getDeduction();            // 0.0
+$line->getNetAmount();            // 88.0
