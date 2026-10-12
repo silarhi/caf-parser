@@ -196,6 +196,30 @@ final class PaymentSlipParserTest extends TestCase
         self::assertSame(10.00, $line->getNetAmount());
     }
 
+    public function testParsingLargeInput(): void
+    {
+        // The former table regex exceeded pcre.backtrack_limit above ~5k rows
+        $row = ' :                      : 1234567 A : MME TEST ALPHA           : 12 2021 : 01 2022 :      300,00:      25,50:     274,50 :';
+
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(self::buildContent(...array_fill(0, 10000, $row)));
+
+        self::assertCount(10000, $result->getLines());
+        self::assertSame('MME TEST ALPHA', $result->getLines()[9999]->getBeneficiaryName());
+    }
+
+    public function testLinesDoNotShareDateInstances(): void
+    {
+        $row = ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :';
+
+        $parser = new PaymentSlipParser();
+        $lines = $parser->parse(self::buildContent($row, $row))->getLines();
+
+        self::assertEquals($lines[0]->getStartDate(), $lines[1]->getStartDate());
+        self::assertNotSame($lines[0]->getStartDate(), $lines[1]->getStartDate());
+        self::assertNotSame($lines[0]->getStartDate(), $lines[0]->getEndDate());
+    }
+
     public function testParsingWithoutMetadata(): void
     {
         $parser = new PaymentSlipParser();

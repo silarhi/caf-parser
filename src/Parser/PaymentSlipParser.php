@@ -22,13 +22,18 @@ use Silarhi\Caf\Model\PaymentSlip;
 use Silarhi\Caf\Model\PaymentSlipLine;
 
 use function sprintf;
+use function strlen;
 
 /**
  * Parser for LA44ZZ file
  */
 final class PaymentSlipParser
 {
-    private const TABLE_CONTENT_REGEX = '/-{121}[\S\s]*-{121}\s*?([\s|\S]*)\s*-{121}[\S\s]*-{121}/U';
+    // Table borders: a line of 121 dashes
+    private const TABLE_BORDER = '-------------------------------------------------------------------------------------------------------------------------';
+
+    // Characters matched by PCRE "\s" (without the "u" modifier)
+    private const WHITESPACES = " \t\n\v\f\r";
 
     private const PROCESSING_DATE_REGEX = '/DATE DE TRAITEMENT\s*:\s*(\d{2}\s+\d{2}\s+\d{4})/';
 
@@ -57,18 +62,22 @@ final class PaymentSlipParser
 
     public const FULL_DATE_FORMAT = 'd m Y';
 
+    /** @var array<string, DateTimeImmutable> */
+    private array $dateCache = [];
+
     /**
      * @throws ParseException
      */
     public function parse(string $content): PaymentSlip
     {
-        $matchCount = preg_match_all(self::TABLE_CONTENT_REGEX, $content, $matches, \PREG_SET_ORDER);
-        if (false === $matchCount || 0 === $matchCount) {
+        $tableContent = $this->extractTableContent($content);
+        if (null === $tableContent) {
             throw new ParseException('Input CAF LA44 could not be parsed');
         }
 
         // Normalize Carriage return before splitting
-        $tableContent = str_replace("\r\n", "\n", $matches[0][1]);
+        $tableContent = str_replace("\r\n", "\n", $tableContent);
+        $this->dateCache = [];
 
         $paymentSlip = new PaymentSlip();
 
@@ -82,30 +91,65 @@ final class PaymentSlipParser
                 throw new ParseException(sprintf('CAF Row n°%d could not be parsed', $i + 1));
             }
 
-            $values = array_map(trim(...), $values);
-
             $paymentSlipLine = new PaymentSlipLine();
             $paymentSlipLine
-                ->setReference($values[1])
-                ->setBeneficiaryReference($values[2])
-                ->setBeneficiaryName($values[3]);
+                ->setReference(trim($values[1]))
+                ->setBeneficiaryReference(trim($values[2]))
+                ->setBeneficiaryName(trim($values[3]));
 
             try {
-                $paymentSlipLine->setStartDate($this->getDateValue($values[4]));
-                $paymentSlipLine->setEndDate($this->getDateValue($values[5]));
+                $paymentSlipLine->setStartDate($this->getDateValue(trim($values[4])));
+                $paymentSlipLine->setEndDate($this->getDateValue(trim($values[5])));
             } catch (ParseException $e) {
                 throw new ParseException(sprintf('CAF Row n°%d : %s', $i + 1, $e->getMessage()), $e->getCode(), $e);
             }
 
             $paymentSlipLine
-                ->setGrossAmount($this->getAmountValue($values[6]))
-                ->setDeduction($this->getAmountValue($values[7]))
-                ->setNetAmount($this->getAmountValue($values[8]));
+                ->setGrossAmount($this->getAmountValue(trim($values[6])))
+                ->setDeduction($this->getAmountValue(trim($values[7])))
+                ->setNetAmount($this->getAmountValue(trim($values[8])));
 
             $paymentSlip->addLine($paymentSlipLine);
         }
 
+        $this->dateCache = [];
+
         return $paymentSlip;
+    }
+
+    /**
+     * Returns the content between the 2nd and the 3rd table borders, without its surrounding whitespaces,
+     * provided that a 4th border follows. Same result as the former regex
+     * '/-{121}[\S\s]*-{121}\s*?([\s|\S]*)\s*-{121}[\S\s]*-{121}/U', whose lazy capture used one backtracking step
+     * per character and hit pcre.backtrack_limit on large files.
+     */
+    private function extractTableContent(string $content): ?string
+    {
+        $length = strlen(self::TABLE_BORDER);
+
+        $headerStart = strpos($content, self::TABLE_BORDER);
+        if (false === $headerStart) {
+            return null;
+        }
+
+        $headerEnd = strpos($content, self::TABLE_BORDER, $headerStart + $length);
+        if (false === $headerEnd) {
+            return null;
+        }
+
+        $start = $headerEnd + $length;
+        $start += strspn($content, self::WHITESPACES, $start);
+
+        $end = strpos($content, self::TABLE_BORDER, $start);
+        if (false === $end || false === strpos($content, self::TABLE_BORDER, $end + $length)) {
+            return null;
+        }
+
+        while ($end > $start && str_contains(self::WHITESPACES, $content[$end - 1])) {
+            --$end;
+        }
+
+        return substr($content, $start, $end - $start);
     }
 
     private function getAmountValue(string $input): float
@@ -123,7 +167,8 @@ final class PaymentSlipParser
 
     private function getDateValue(string $input): DateTimeInterface
     {
-        return $this->createDateFromFormat(self::DATE_FORMAT, $input);
+        // Rows mostly share the same few months: parse each value once, return a copy so that lines do not share instances
+        return clone ($this->dateCache[$input] ??= $this->createDateFromFormat(self::DATE_FORMAT, $input));
     }
 
     private function getFullDateValue(string $input): DateTimeInterface

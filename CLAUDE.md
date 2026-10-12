@@ -31,7 +31,7 @@ vendor/bin/rector process
 
 ### Parser (`src/Parser/`)
 
-- `PaymentSlipParser`: Parses LA44ZZ file content using regex patterns to extract table data, dates, amounts, and metadata (CAF name/address, recipient info, bank details, totals)
+- `PaymentSlipParser`: Parses LA44ZZ file content: locates the table between its 121-dash borders with `strpos` (a regex hit `pcre.backtrack_limit` on large files), then extracts rows, dates (cached per `parse()` call, cloned per line), amounts, and metadata (CAF name/address, recipient info, bank details, totals)
 
 ### Models (`src/Model/`)
 
