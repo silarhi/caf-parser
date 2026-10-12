@@ -40,7 +40,7 @@ vendor/bin/rector process
 
 ### Exceptions (`src/Exceptions/`)
 
-- `ParseException`: Thrown when parsing fails (invalid format, unparseable rows, bad dates)
+- `ParseException`: Thrown when parsing fails (invalid format, unparseable rows, bad dates, malformed amounts)
 
 ## Code Standards
 

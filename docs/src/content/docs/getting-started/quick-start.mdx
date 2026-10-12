@@ -35,5 +35,5 @@ Here is a sample slip, with made-up data, and what the parser returns for it:
 The metadata getters of `PaymentSlip` return `null` when the file does not hold the information; the lines always have
 every field. See [parsed objects](/reference/models/) for each getter.
 
-`parse()` throws a `ParseException` when the content is not a LA44ZZ payment slip, or when a row or a date is invalid:
+`parse()` throws a `ParseException` when the content is not a LA44ZZ payment slip, or when a row, an amount or a date is invalid:
 see [error handling](/guides/error-handling/).

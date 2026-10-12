@@ -11,6 +11,8 @@ import Example from '../../../components/Example.astro'
 
 - the content has no LA44ZZ payment table (fewer than four 121-dash borders), such as an empty string or another file
 - a row does not have the expected columns
+- an amount, in a row or in the total, is malformed: `1.298.50`, `ABC` or an empty amount (see
+  [parsing](/guides/parsing/#amounts) for the accepted formats)
 - a date, in a row or in the header, is invalid or out of range: `13 2021` or `31 02 2021` are rejected instead of
   being rolled over
 
@@ -20,7 +22,7 @@ use Silarhi\Caf\Exceptions\ParseException;
 try {
     $paymentSlip = $parser->parse($content);
 } catch (ParseException $e) {
-    // Not a LA44ZZ payment slip, malformed row or invalid date
+    // Not a LA44ZZ payment slip, malformed row, malformed amount or invalid date
 }
 ```
 
@@ -29,12 +31,14 @@ getter returns `null` (see [parsing](/guides/parsing/#metadata)).
 
 ## Messages
 
-| Cause                  | Message                                                                            |
-| ---------------------- | ---------------------------------------------------------------------------------- |
-| No payment table       | `Input CAF LA44 could not be parsed`                                               |
-| Malformed or empty row | `CAF Row n°2 could not be parsed`                                                  |
-| Invalid date in a row  | `CAF Row n°2 : "13 2025" date value could not be parsed, expected format is "m Y"` |
-| Invalid header date    | `"31 02 2021" date value could not be parsed, expected format is "d m Y"`          |
+| Cause                   | Message                                                                            |
+| ----------------------- | ---------------------------------------------------------------------------------- |
+| No payment table        | `Input CAF LA44 could not be parsed`                                               |
+| Malformed or empty row  | `CAF Row n°2 could not be parsed`                                                  |
+| Invalid date in a row   | `CAF Row n°2 : "13 2025" date value could not be parsed, expected format is "m Y"` |
+| Invalid header date     | `"31 02 2021" date value could not be parsed, expected format is "d m Y"`          |
+| Invalid amount in a row | `CAF Row n°2 : "1.298.50" amount value could not be parsed`                        |
+| Invalid total           | `"1.298.50" amount value could not be parsed`                                      |
 
 Row numbers count from 1 at the first row of the table, not from the top of the file. An empty table fails on row 1.
 
@@ -49,3 +53,10 @@ The second row of this table misses the `:` between its deduction and its net am
 The second row starts in month `13`. The exception wraps the date error, available from `getPrevious()`:
 
 <Example name="invalid-date" mark="13 2025" />
+
+## Invalid amount
+
+The net amount of the second row uses a dot both as thousands and decimal separator. Like a date error, the exception
+wraps the amount error:
+
+<Example name="invalid-amount" mark="1.298.50" />

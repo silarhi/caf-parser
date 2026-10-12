@@ -28,10 +28,12 @@ composer require silarhi/caf-parser
         Processing and payment dates, CAF name and address, recipient name and address, reference, BIC, IBAN and total.
     </Card>
     <Card title="Typed results" icon="approve-check">
-        Dates as `DateTimeInterface`, amounts as `float`, with French amount formats such as `1 298,50`.
+        Dates as `DateTimeInterface`, amounts as `float`, with French and English formats such as `1 298,50` or
+        `1,298.50`.
     </Card>
     <Card title="Strict validation" icon="warning">
-        Malformed rows and invalid or out-of-range dates throw a `ParseException` instead of rolling over.
+        Malformed rows and amounts, and invalid or out-of-range dates, throw a `ParseException` instead of a wrong
+        value.
     </Card>
     <Card title="No dependencies" icon="rocket">
         Plain PHP 8.2+, with Windows (`\r\n`) and Unix line endings.

@@ -46,9 +46,13 @@ row, `31 02 2021` or `29 02 2021` in the header. See [error handling](/guides/er
 
 ## Amounts
 
-Amounts are returned as `float`. Spaces, no-break spaces and narrow no-break spaces are thousands separators. When the
-amount has a comma, the comma is the decimal separator and dots are thousands separators; without a comma, a dot is the
-decimal separator.
+Amounts are returned as `float`, in the rows and in the total. Spaces, no-break spaces (U+00A0) and narrow no-break
+spaces (U+202F) are thousands separators. Then:
+
+- a single comma or dot is the decimal separator: `1298,50` and `1298.50` are both `1298.5`
+- with both, the last one is the decimal separator and the other one groups the digits by 3: French (`1.298,50`) and
+  English (`1,298.50`) formats give the same result
+- a comma or dot repeated without decimals groups the digits by 3: `12.345.678` or `12,345,678`
 
 | In the file     | Result       |
 | --------------- | ------------ |
@@ -56,15 +60,21 @@ decimal separator.
 | `1298,00`       | `1298.0`     |
 | `1 298,50`      | `1298.5`     |
 | `1.298,50`      | `1298.5`     |
+| `1,298.50`      | `1298.5`     |
 | `1298.50`       | `1298.5`     |
 | `12 345 678,90` | `12345678.9` |
+| `12.345.678`    | `12345678.0` |
+| `-12,50`        | `-12.5`      |
 
-:::caution
-English formats with a comma as thousands separator are not supported: `1,298.50` gives `1.2985`.
-
-The total accepts digits, spaces, dots and commas only: with a no-break space (`1 298,00` written with U+00A0),
-`getTotalAmount()` returns `null`. Line amounts accept them.
+:::note
+A single separator followed by 3 digits is ambiguous: as LA44ZZ files are French, `1,298` and `1.298` are read as
+decimals and both give `1.298`.
 :::
+
+Any other amount throws a `ParseException` instead of returning a wrong value: an empty amount, letters, the same
+separator for thousands and decimals (`1.298.50`), digits not grouped by 3 (`12.34,50`) or a trailing minus sign
+(`12,50-`). See [error handling](/guides/error-handling/#invalid-amount). A blank total (`TOTAL :      :`) is not an
+error: `getTotalAmount()` returns `null`, like a missing one.
 
 ## Metadata
 
@@ -74,16 +84,15 @@ total is `null`:
 
 <Example name="table-only" />
 
-The CAF address is set only when both its street and its city lines are found. The patterns come from sample slips, so
-some headers are not recognized:
+| Field                   | Read from                                                                                                                                      | Accepts, e.g.                                                    |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `getCafName()`          | `CAISSE D'ALLOCATIONS FAMILIALES`, then the next line up to its right column: uppercase letters, spaces, `'` and `-`                           | `DE L'AIN`, `DE SEINE-SAINT-DENIS`                               |
+| `getCafAddress()`       | The text before `NUMERO DE PRODUIT` on its line (street), then the text before `TYPE DE TRAITEMENT` starting with a 5-digit postal code (city) | `8 AVENUE DES CANUTS`, `PLACE DE LA GARE`, `42000 SAINT ETIENNE` |
+| `getRecipientName()`    | The first line indented by 20 spaces or more that starts with a letter: letters, digits, spaces, `-`, `.`, `'` and `&`                         | `SCI L'ETOILE`, `DUPONT & FILS`, `Mme Dupont`                    |
+| `getRecipientAddress()` | The end of the `NM REFERENCE` line (street), then the next line starting with a 5-digit postal code (city)                                     | `LIEU-DIT LES PINS`, `42000 SAINT-ETIENNE CEDEX 2`               |
 
-- the CAF street must start with a number followed by `RUE`, and stops at the first `N` after it: `12 RUE DU PONT`
-  gives a `null` address
-- the CAF city must start with a 5-digit postal code, and stops at the first `T` after its first letter:
-  `42000 SAINT ETIENNE` gives a `null` address
-- the second line of the CAF name accepts uppercase letters and spaces only: `DE L'AIN` gives a `null` CAF name
-- the recipient name accepts uppercase letters, digits, spaces, `-` and `.` only: `SCI L'ETOILE` gives a `null`
-  recipient name
+The CAF address is set only when both its street and its city are found. The patterns come from sample slips: a
+header laid out differently gives `null` for that field.
 
 ## Line endings
 
