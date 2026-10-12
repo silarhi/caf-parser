@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace Silarhi\Caf\Tests\Parser;
 
+use function array_slice;
+
 use DateTimeImmutable;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -38,6 +40,47 @@ final class PaymentSlipParserTest extends TestCase
 
         $parser = new PaymentSlipParser();
         $parser->parse('Lorem ipsum dolor sit amet');
+    }
+
+    /**
+     * The table rows are expected between the 2nd and the 3rd of at least 4 table borders.
+     */
+    #[DataProvider('provideIncompleteTables')]
+    public function testIncompleteTable(int $borders): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessage('Input CAF LA44 could not be parsed');
+
+        $content = self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        );
+        $separator = str_repeat('-', 121);
+        $parts = explode($separator, $content);
+
+        $parser = new PaymentSlipParser();
+        $parser->parse(implode($separator, array_slice($parts, 0, $borders + 1)));
+    }
+
+    /**
+     * @return iterable<string, array{int}>
+     */
+    public static function provideIncompleteTables(): iterable
+    {
+        yield 'header top border only' => [1];
+        yield 'header borders only' => [2];
+        yield 'missing bottom border' => [3];
+    }
+
+    /**
+     * A LA44 slip always has at least one row: an empty table is rejected as an unparseable 1st row.
+     */
+    public function testEmptyTable(): void
+    {
+        $this->expectException(ParseException::class);
+        $this->expectExceptionMessageMatches('/^CAF Row n°1 could not be parsed$/');
+
+        $parser = new PaymentSlipParser();
+        $parser->parse(self::buildContent());
     }
 
     public function testUnparseable2ndCafRow(): void
@@ -394,6 +437,32 @@ final class PaymentSlipParserTest extends TestCase
 
         self::assertEquals(new DateTimeImmutable('2024-02-29 00:00:00'), $result->getProcessingDate());
         self::assertEquals(new DateTimeImmutable('2024-01-31 00:00:00'), $result->getPaymentDate());
+    }
+
+    /**
+     * The CAF address is only set when both its street and its city are found.
+     */
+    #[DataProvider('providePartialCafAddresses')]
+    public function testPartialCafAddressIsIgnored(string $header): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(implode("\n", [
+            $header,
+            self::buildContent(
+                ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+            ),
+        ]));
+
+        self::assertNull($result->getCafAddress());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function providePartialCafAddresses(): iterable
+    {
+        yield 'street without city' => [' 24 RUE PIERRE PAUL RIQUET                                NUMERO DE PRODUIT :       LA44'];
+        yield 'city without street' => [' 31046 TOULOUSE CEDEX 9                                  TYPE DE TRAITEMENT : DIE'];
     }
 
     #[DataProvider('provideInvalidMetadataDates')]
