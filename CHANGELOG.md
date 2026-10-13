@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.2.0] - Unreleased
+## [3.2.0] - 2026-10-13
 
 ### Added
 
@@ -77,7 +77,7 @@ No functional changes: the test fixtures were anonymised.
 
 - `PaymentSlipParser::parse()` reads the content of a CAF LA44ZZ payment slip and returns a `PaymentSlip` whose `PaymentSlipLine`s carry the reference, the beneficiary reference and name, the start and end months, and the gross, deduction and net amounts. It throws `ParseException` when the table, a row or a date cannot be parsed. Requires PHP 7.2 or later.
 
-[3.2.0]: https://github.com/silarhi/caf-parser/compare/3.1.2...main
+[3.2.0]: https://github.com/silarhi/caf-parser/compare/3.1.2...3.2.0
 [3.1.2]: https://github.com/silarhi/caf-parser/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/silarhi/caf-parser/compare/3.1.0...3.1.1
 [3.1.0]: https://github.com/silarhi/caf-parser/compare/3.0.0...3.1.0
