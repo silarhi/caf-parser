@@ -1,6 +1,6 @@
 {
     "name": "silarhi/caf-parser",
-    "description": "A CAF Parser for LA44ZZ file",
+    "description": "A PHP parser for CAF LA44ZZ payment slips",
     "license": "MIT",
     "type": "library",
     "keywords": [
@@ -14,6 +14,12 @@
             "email": "hello@silarhi.fr"
         }
     ],
+    "homepage": "https://caf-parser.silarhi.dev",
+    "support": {
+        "issues": "https://github.com/silarhi/caf-parser/issues",
+        "source": "https://github.com/silarhi/caf-parser",
+        "docs": "https://caf-parser.silarhi.dev"
+    },
     "require": {
         "php": ">=8.2"
     },
