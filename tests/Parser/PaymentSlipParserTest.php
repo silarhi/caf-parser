@@ -386,28 +386,63 @@ final class PaymentSlipParserTest extends TestCase
         yield 'narrow no-break space thousands separator' => ["       1\u{202F}298,00", 1298.00];
         yield 'comma thousands separator' => ['       1,298.50', 1298.50];
         yield 'several comma thousands separators' => ['  12,345,678.90', 12345678.90];
+        yield 'negative' => ['         -12,50', -12.50];
     }
 
-    public function testInvalidTotalAmount(): void
+    #[DataProvider('provideInvalidTotalAmounts')]
+    public function testInvalidTotalAmount(string $total, string $expectedMessage): void
     {
         $this->expectException(ParseException::class);
-        $this->expectExceptionMessage('"1.298.50" amount value could not be parsed');
+        $this->expectExceptionMessage($expectedMessage);
 
         $parser = new PaymentSlipParser();
         $content = self::buildContent(
             ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
         );
-        $parser->parse(str_replace('TOTAL :', 'TOTAL :        1.298.50 :', $content));
+        $parser->parse(str_replace('TOTAL :', sprintf('TOTAL : %s :', $total), $content));
     }
 
-    public function testBlankTotalAmountIsIgnored(): void
+    /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideInvalidTotalAmounts(): iterable
+    {
+        yield 'same thousands and decimal separator' => ['       1.298.50', '"1.298.50" amount value could not be parsed'];
+        yield 'letters' => ['            ABC', '"ABC" amount value could not be parsed'];
+        yield 'trailing minus sign' => ['         12,50-', '"12,50-" amount value could not be parsed'];
+    }
+
+    #[DataProvider('provideBlankTotalAmounts')]
+    public function testBlankTotalAmountIsIgnored(string $total): void
     {
         $parser = new PaymentSlipParser();
         $content = self::buildContent(
             ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
         );
-        $result = $parser->parse(str_replace('TOTAL :', 'TOTAL :                 :', $content));
+        $result = $parser->parse(str_replace('TOTAL :', sprintf('TOTAL :%s:', $total), $content));
 
+        self::assertNull($result->getTotalAmount());
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideBlankTotalAmounts(): iterable
+    {
+        yield 'spaces' => ['                 '];
+        yield 'empty' => [''];
+        yield 'no-break spaces' => ["  \u{00A0}\u{202F}  "];
+    }
+
+    public function testTotalInRowIsNotTheTotalAmount(): void
+    {
+        $parser = new PaymentSlipParser();
+        $content = self::buildContent(
+            ' :                      : 1234567 A : SCI TOTAL                : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        );
+        $result = $parser->parse($content);
+
+        self::assertSame('SCI TOTAL', $result->getLines()[0]->getBeneficiaryName());
         self::assertNull($result->getTotalAmount());
     }
 

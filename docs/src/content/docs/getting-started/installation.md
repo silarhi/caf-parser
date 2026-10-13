@@ -21,11 +21,11 @@ composer require silarhi/caf-parser
 
 The classes live under the `Silarhi\Caf` namespace:
 
-| Class                                   | Role                                                                  |
-| --------------------------------------- | --------------------------------------------------------------------- |
-| `Silarhi\Caf\Parser\PaymentSlipParser`  | Reads the content of a LA44ZZ file                                    |
-| `Silarhi\Caf\Model\PaymentSlip`         | The parsed slip: its metadata and its lines                           |
-| `Silarhi\Caf\Model\PaymentSlipLine`     | One payment line of the table                                         |
-| `Silarhi\Caf\Exceptions\ParseException` | Thrown when the content is not a LA44ZZ slip, or a row or date is bad |
+| Class                                   | Role                                                                                   |
+| --------------------------------------- | -------------------------------------------------------------------------------------- |
+| `Silarhi\Caf\Parser\PaymentSlipParser`  | Reads the content of a LA44ZZ file                                                     |
+| `Silarhi\Caf\Model\PaymentSlip`         | The parsed slip: its metadata and its lines                                            |
+| `Silarhi\Caf\Model\PaymentSlipLine`     | One payment line of the table                                                          |
+| `Silarhi\Caf\Exceptions\ParseException` | Thrown when the content is not a LA44ZZ slip, or a row, an amount or a date is invalid |
 
 Next: [quick start](/getting-started/quick-start/).

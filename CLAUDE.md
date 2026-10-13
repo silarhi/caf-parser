@@ -15,7 +15,7 @@ composer install
 # Run tests
 vendor/bin/phpunit
 vendor/bin/phpunit tests/Parser/PaymentSlipParserTest.php  # Single file
-vendor/bin/phpunit --filter testParsing                     # Single method
+vendor/bin/phpunit --filter 'testParsing$'                 # Single method (a bare name also matches testParsingLines…)
 
 # Static analysis (level max)
 vendor/bin/phpstan analyse

@@ -13,11 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- A malformed amount throws `ParseException` instead of being silently truncated: `1,298.50` gave `1.2985` and `1.298.50` gave `1.298`. A row amount that is empty, has letters, two decimal separators or a thousands separator not grouping 3 digits throws `CAF Row n°<row> : "<amount>" amount value could not be parsed`; a malformed total throws `"<amount>" amount value could not be parsed`.
+- A malformed amount throws `ParseException` instead of being silently truncated: `1,298.50` gave `1.2985` and `1.298.50` gave `1.298`. A row amount that is empty, has letters, two decimal separators or a thousands separator not grouping 3 digits throws `CAF Row n°<row> : "<amount>" amount value could not be parsed`; a malformed total throws `"<amount>" amount value could not be parsed`. The total row is read whatever its value: a total not starting with a digit gave a `null` `getTotalAmount()`, `-12,50` now gives `-12.5` and `ABC` or `12,50-` throw.
 - A blank total (`TOTAL :          :`) gives a `null` `getTotalAmount()` instead of `0.0`, like a missing one.
 
 ### Fixed
 
+- `getTotalAmount()` read the period of a row whose beneficiary name ends with `TOTAL` (`SCI TOTAL`) as the total (`01 2022` gave `12022.0`): only the row below the table is read now.
 - `getTotalAmount()` returned `null` when the total used no-break or narrow no-break spaces as thousands separators (`1 298,00`), which 3.1.1 announced but only applied to the line amounts.
 - `getCafAddress()` returned `null` for streets with an `N` after `RUE` (`12 RUE DU PONT`) or not of the form `<number> RUE` (`8 AVENUE DES CANUTS`, `PLACE DE LA GARE`), and for cities with a `T` after their first letter (`42000 SAINT ETIENNE`). The street and the city are now whatever precedes their label on their line, the city starting with its postal code.
 - `getCafName()` returned `null` when the name had an apostrophe or a hyphen (`DE L'AIN`, `DE SEINE-SAINT-DENIS`).

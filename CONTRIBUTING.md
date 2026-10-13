@@ -12,8 +12,9 @@ yarn install # Git hooks: lint-staged formats the staged files on commit
 
 ## Quality checks
 
-Please make sure your changes pass all quality checks before submitting a pull request. The CI runs them all, on every
-supported PHP version:
+Please make sure your changes pass all quality checks before submitting a pull request. The CI runs PHPUnit on every
+supported PHP version, with the lowest and the latest dependencies, and each other check once, except Rector: run it
+locally.
 
 ```bash
 # Tests

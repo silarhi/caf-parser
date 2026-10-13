@@ -25,8 +25,8 @@ follow (the total row sits between the 3rd and the 4th). Without these four bord
 
 Each line between the 2nd and the 3rd borders is a row, split on `:` into exactly ten parts: the eight columns, plus
 what comes before the first `:` and after the last one, which are ignored. Every value is trimmed. A row with another
-number of parts, a blank line in the table or an empty table throws `CAF Row n°<row> could not be parsed`, counting
-rows from 1 at the first row of the table.
+number of parts, a blank line between two rows or an empty table throws `CAF Row n°<row> could not be parsed`, counting
+rows from 1 at the first row of the table. Blank lines before the first row or after the last one are ignored.
 
 Large files are fine: the table is located without regular expressions, and the test suite parses 10,000 rows.
 

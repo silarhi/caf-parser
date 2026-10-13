@@ -56,8 +56,8 @@ final class PaymentSlipParser
 
     private const BANK_REGEX = '/^\s*VB\s+([A-Z0-9]+)\s+(FR\d{2}[\s0-9]+)/m';
 
-    // Digits, dots, commas and spaces, including UTF-8 no-break and narrow no-break spaces
-    private const TOTAL_REGEX = '/TOTAL\s*:\s*(\d(?:[\d\s,.]|\xC2\xA0|\xE2\x80\xAF)*)\s*:/';
+    // The row below the table, whatever its value: " :     TOTAL :  1298,00 :"
+    private const TOTAL_REGEX = '/^[ \t]*:[ \t]*TOTAL[ \t]*:([^:\n]*):/m';
 
     // Space thousands separators of amounts: whitespaces, including UTF-8 no-break and narrow no-break spaces
     private const AMOUNT_SPACES_REGEX = '/\s|\xC2\xA0|\xE2\x80\xAF/';
@@ -258,8 +258,9 @@ final class PaymentSlipParser
             $paymentSlip->setIban($iban);
         }
 
-        // Total amount
-        if (1 === preg_match(self::TOTAL_REGEX, $content, $matches)) {
+        // Total amount: a blank one is ignored like a missing one, any other value must be a valid amount
+        if (1 === preg_match(self::TOTAL_REGEX, $content, $matches)
+            && '' !== preg_replace(self::AMOUNT_SPACES_REGEX, '', $matches[1])) {
             $paymentSlip->setTotalAmount($this->getAmountValue($matches[1]));
         }
     }
