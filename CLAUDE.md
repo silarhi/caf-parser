@@ -11,6 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 # Install dependencies
 composer install
+pnpm install  # git hooks (husky + lint-staged); `docs/` has its own `pnpm install`
 
 # Run tests
 vendor/bin/phpunit
@@ -26,6 +27,8 @@ vendor/bin/php-cs-fixer fix
 # Rector upgrades
 vendor/bin/rector process
 ```
+
+pnpm is the package manager (root for the git hooks, `docs/` for the site, each with its own lockfile): its version is pinned by `packageManager` in `package.json`, and `pnpm-workspace.yaml` lists the dependencies allowed to run install scripts (`allowBuilds`; pnpm fails the install on a new unlisted one).
 
 ## Architecture
 

@@ -7,7 +7,7 @@ Contributions are welcome! Bug reports and feature requests go to the
 
 ```bash
 composer install
-yarn install # Git hooks: lint-staged formats the staged files on commit
+pnpm install # Git hooks: lint-staged formats the staged files on commit
 ```
 
 ## Quality checks
@@ -50,8 +50,8 @@ folder with [Starlight](https://starlight.astro.build). Document a change in the
 
 ```bash
 cd docs
-yarn install
-yarn dev # http://localhost:4321
+pnpm install
+pnpm dev # http://localhost:4321
 ```
 
 The examples of the site are real parser output: each `docs/examples/<name>.txt` file is parsed by
