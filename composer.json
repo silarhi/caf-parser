@@ -1,12 +1,14 @@
 {
     "name": "silarhi/caf-parser",
-    "description": "A PHP parser for CAF LA44ZZ payment slips",
+    "description": "A PHP parser for French CAF (Caisse d'Allocations Familiales) LA44ZZ payment files",
     "license": "MIT",
     "type": "library",
     "keywords": [
         "caf",
         "parser",
-        "LA44ZZ"
+        "LA44ZZ",
+        "caf-parser",
+        "payment"
     ],
     "authors": [
         {
