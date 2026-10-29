@@ -35,26 +35,31 @@ final class PaymentSlipParser
     // Characters matched by PCRE "\s" (without the "u" modifier)
     private const WHITESPACES = " \t\n\v\f\r";
 
+    // Metadata patterns stay on one line ("[ \t]" rather than "\s", which matches "\n") and never scan a run of spaces
+    // twice (possessive quantifiers, lookbehinds), so that their cost stays linear whatever the content
     private const PROCESSING_DATE_REGEX = '/DATE DE TRAITEMENT\s*:\s*(\d{2}\s+\d{2}\s+\d{4})/';
 
-    private const PAYMENT_DATE_REGEX = '/BORDEREAU DE PAIEMENT.*DU\s+(\d{2}\s+\d{2}\s+\d{4})/';
+    // The first "BORDEREAU DE PAIEMENT" of the line, then its last "DU <date>"
+    private const PAYMENT_DATE_REGEX = '/^(?>[^\n]*?BORDEREAU DE PAIEMENT)[^\n]*DU\s+(\d{2}\s+\d{2}\s+\d{4})/m';
 
-    // 2nd line of the CAF name, e.g. "DE HAUTE GARONNE", "DE L'AIN" or "DE SEINE-SAINT-DENIS"
-    private const CAF_NAME_REGEX = '/^\s*(CAISSE D\'ALLOCATIONS FAMILIALES)\s*.*\n\s*([A-ZÀ-Ü\s\'\-]+?)\s{2,}/m';
+    // 2nd line of the CAF name, e.g. "DE HAUTE GARONNE", "DE L'AIN" or "DE SEINE-SAINT-DENIS": words separated by
+    // single spaces, up to 2 spaces or the end of the line
+    private const CAF_NAME_REGEX = '/^[ \t]*+(CAISSE D\'ALLOCATIONS FAMILIALES)[^\n]*+\n[ \t]*+([A-ZÀ-Ü\'\-]++(?: [A-ZÀ-Ü\'\-]++)*+)(?:[ \t]{2,}|[ \t]*$)/m';
 
     // The CAF street and city are what precedes their label on the same line
-    private const CAF_STREET_REGEX = '/^[ \t]*(\S.*?)[ \t]+NUMERO DE PRODUIT/m';
+    private const CAF_STREET_REGEX = '/^[ \t]*+(\S.*?)(?<![ \t])[ \t]++NUMERO DE PRODUIT/m';
 
-    private const CAF_CITY_REGEX = '/^[ \t]*(\d{5}[ \t]+\S.*?)[ \t]+TYPE DE TRAITEMENT/m';
+    private const CAF_CITY_REGEX = '/^[ \t]*+(\d{5}[ \t]++\S.*?)(?<![ \t])[ \t]++TYPE DE TRAITEMENT/m';
 
-    private const RECIPIENT_NAME_REGEX = '/^\s{20,}([A-Za-zÀ-Ü][A-Za-zÀ-Ü0-9\s\-\.\'&]+?)\s*$/m';
+    // The whole line, trailing spaces included (they are trimmed)
+    private const RECIPIENT_NAME_REGEX = '/^[ \t]{20,}+([A-Za-zÀ-Ü][A-Za-zÀ-Ü0-9 \t\-\.\'&]++)$/m';
 
-    // The recipient street ends the reference line, the next line starts with the postal code
-    private const RECIPIENT_ADDRESS_REGEX = '/NM REFERENCE\s*:\s*\d+\s+\d+[ \t]{2,}(\S.*?)\s*\n\s{20,}(\d{5}[ \t]+\S.*?)\s*$/m';
+    // The recipient street ends the reference line, the next line starts with the postal code (both are trimmed)
+    private const RECIPIENT_ADDRESS_REGEX = '/NM REFERENCE\s*:\s*\d+\s+\d+[ \t]{2,}+(\S[^\n]*+)\n[ \t]{20,}+(\d{5}[ \t]++\S[^\n]*+)/';
 
     private const REFERENCE_REGEX = '/NM REFERENCE\s*:\s*(\d+\s+\d+)/';
 
-    private const BANK_REGEX = '/^\s*VB\s+([A-Z0-9]+)\s+(FR\d{2}[\s0-9]+)/m';
+    private const BANK_REGEX = '/^[ \t]*+VB\s+([A-Z0-9]+)\s+(FR\d{2}[ \t0-9]+)/m';
 
     // The row below the table, whatever its value: " :     TOTAL :  1298,00 :"
     private const TOTAL_REGEX = '/^[ \t]*:[ \t]*TOTAL[ \t]*:([^:\n]*):/m';
@@ -62,10 +67,11 @@ final class PaymentSlipParser
     // Space thousands separators of amounts: whitespaces, including UTF-8 no-break and narrow no-break spaces
     private const AMOUNT_SPACES_REGEX = '/\s|\xC2\xA0|\xE2\x80\xAF/';
 
-    // Once spaces are removed: either digits with at most one dot or comma, which is the decimal separator
-    // ("1298,50", "1298.50", "1,298"), or digits grouped by 3 with dots or commas, then optionally the other one
-    // as decimal separator ("12.345.678", "1.298,50", "1,298.50").
-    private const AMOUNT_REGEX = '/^-?(?:\d+(?:[.,]\d+)?|\d{1,3}(?<thousands>[.,])\d{3}(?:\k<thousands>\d{3})*(?:(?!\k<thousands>)[.,]\d+)?)$/';
+    // Once spaces are removed, at most 12 digits before the decimals, which are 2 digits as in LA44ZZ files: either
+    // digits with optionally a dot or comma as decimal separator ("272", "1298,50", "1298.50"), or digits grouped by 3
+    // with dots or commas, then the other one as decimal separator ("1.298,50", "1,298.50") or at least 2 groups
+    // ("12.345.678"). A single separator followed by 3 digits ("1,298" or "1.298") is ambiguous and rejected.
+    private const AMOUNT_REGEX = '/^-?(?:\d{1,12}(?:[.,]\d{2})?|\d{1,3}(?<thousands>[.,])\d{3}(?:(?:\k<thousands>\d{3}){0,2}(?!\k<thousands>)[.,]\d{2}|(?:\k<thousands>\d{3}){1,2}))$/';
 
     public const DATE_FORMAT = 'm Y';
 
@@ -79,13 +85,14 @@ final class PaymentSlipParser
      */
     public function parse(string $content): PaymentSlip
     {
+        // Normalize Carriage return before splitting the rows and matching the metadata, whose patterns stay on one line
+        $content = str_replace("\r\n", "\n", $content);
+
         $tableContent = $this->extractTableContent($content);
         if (null === $tableContent) {
             throw new ParseException('Input CAF LA44 could not be parsed');
         }
 
-        // Normalize Carriage return before splitting
-        $tableContent = str_replace("\r\n", "\n", $tableContent);
         $this->dateCache = [];
 
         $paymentSlip = new PaymentSlip();
@@ -173,7 +180,14 @@ final class PaymentSlipParser
             $amount = str_replace($matches['thousands'], '', $amount);
         }
 
-        return (float) str_replace(',', '.', $amount);
+        $value = (float) str_replace(',', '.', $amount);
+
+        // Unreachable with 12 digits at most, kept so that INF or NAN can never be returned as an amount
+        if (!is_finite($value)) {
+            throw new ParseException(sprintf('"%s" amount value could not be parsed', trim($input)));
+        }
+
+        return $value;
     }
 
     private function getDateValue(string $input): DateTimeInterface
@@ -204,20 +218,40 @@ final class PaymentSlipParser
         return $result;
     }
 
+    /**
+     * A failed match (e.g. pcre.backtrack_limit reached) throws instead of being taken for a missing field.
+     *
+     * @return array<int|string, string>|null
+     *
+     * @throws ParseException
+     */
+    private function matchMetadata(string $pattern, string $content): ?array
+    {
+        $result = preg_match($pattern, $content, $matches);
+        if (false === $result) {
+            throw new ParseException(sprintf('Input CAF LA44 metadata could not be parsed: %s', preg_last_error_msg()));
+        }
+
+        return 1 === $result ? $matches : null;
+    }
+
+    /**
+     * @throws ParseException
+     */
     private function parseMetadata(string $content, PaymentSlip $paymentSlip): void
     {
         // Processing date
-        if (1 === preg_match(self::PROCESSING_DATE_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::PROCESSING_DATE_REGEX, $content))) {
             $paymentSlip->setProcessingDate($this->getFullDateValue($matches[1]));
         }
 
         // Payment date
-        if (1 === preg_match(self::PAYMENT_DATE_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::PAYMENT_DATE_REGEX, $content))) {
             $paymentSlip->setPaymentDate($this->getFullDateValue($matches[1]));
         }
 
         // CAF name
-        if (1 === preg_match(self::CAF_NAME_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::CAF_NAME_REGEX, $content))) {
             $cafName = trim($matches[1] . ' ' . trim($matches[2]));
             $paymentSlip->setCafName($cafName);
         }
@@ -225,10 +259,10 @@ final class PaymentSlipParser
         // CAF address
         $cafStreet = null;
         $cafCity = null;
-        if (1 === preg_match(self::CAF_STREET_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::CAF_STREET_REGEX, $content))) {
             $cafStreet = trim($matches[1]);
         }
-        if (1 === preg_match(self::CAF_CITY_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::CAF_CITY_REGEX, $content))) {
             $cafCity = trim($matches[1]);
         }
         if (null !== $cafStreet && null !== $cafCity) {
@@ -236,30 +270,30 @@ final class PaymentSlipParser
         }
 
         // Recipient name
-        if (1 === preg_match(self::RECIPIENT_NAME_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::RECIPIENT_NAME_REGEX, $content))) {
             $paymentSlip->setRecipientName(trim($matches[1]));
         }
 
         // Recipient address
-        if (1 === preg_match(self::RECIPIENT_ADDRESS_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::RECIPIENT_ADDRESS_REGEX, $content))) {
             $recipientAddress = trim($matches[1]) . ', ' . trim($matches[2]);
             $paymentSlip->setRecipientAddress($recipientAddress);
         }
 
         // Reference
-        if (1 === preg_match(self::REFERENCE_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::REFERENCE_REGEX, $content))) {
             $paymentSlip->setReference(trim($matches[1]));
         }
 
         // Bank references (BIC and IBAN)
-        if (1 === preg_match(self::BANK_REGEX, $content, $matches)) {
+        if (null !== ($matches = $this->matchMetadata(self::BANK_REGEX, $content))) {
             $paymentSlip->setBic(trim($matches[1]));
             $iban = preg_replace('/\s+/', '', $matches[2]);
             $paymentSlip->setIban($iban);
         }
 
         // Total amount: a blank one is ignored like a missing one, any other value must be a valid amount
-        if (1 === preg_match(self::TOTAL_REGEX, $content, $matches)
+        if (null !== ($matches = $this->matchMetadata(self::TOTAL_REGEX, $content))
             && '' !== preg_replace(self::AMOUNT_SPACES_REGEX, '', $matches[1])) {
             $paymentSlip->setTotalAmount($this->getAmountValue($matches[1]));
         }

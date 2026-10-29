@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.0] - Unreleased
+
+### Changed
+
+- Amounts take exactly 2 decimals, as in LA44ZZ files, and at most 12 digits before them. A single comma or dot followed by 3 digits is ambiguous and throws `"<amount>" amount value could not be parsed` instead of being read as decimals: `1,298` and `1.298` gave `1.298`. 1 or 3 decimals (`12,5`, `1298,505`) and 13 digits or more throw too: 400 digits gave `INF`. Amounts without decimals (`272`) and with repeated thousands separators (`12.345.678`) are still read.
+- A metadata pattern that PHP fails to match (e.g. on `pcre.backtrack_limit`) throws `Input CAF LA44 metadata could not be parsed: <error>` instead of leaving its field `null`.
+
+### Fixed
+
+- Crafted headers made `parse()` backtrack for seconds to minutes (15 s for a 400 KB file): the patterns reading the CAF name, the CAF street, the payment date, the recipient name and the recipient address now take a time linear in the size of the content. They read the same values from LA44ZZ files.
+- `getIban()` appended the digits of the next line when it started with digits.
+
 ## [3.2.0] - 2026-10-13
 
 ### Added
@@ -77,6 +89,7 @@ No functional changes: the test fixtures were anonymised.
 
 - `PaymentSlipParser::parse()` reads the content of a CAF LA44ZZ payment slip and returns a `PaymentSlip` whose `PaymentSlipLine`s carry the reference, the beneficiary reference and name, the start and end months, and the gross, deduction and net amounts. It throws `ParseException` when the table, a row or a date cannot be parsed. Requires PHP 7.2 or later.
 
+[3.3.0]: https://github.com/silarhi/caf-parser/compare/3.2.0...main
 [3.2.0]: https://github.com/silarhi/caf-parser/compare/3.1.2...3.2.0
 [3.1.2]: https://github.com/silarhi/caf-parser/compare/3.1.1...3.1.2
 [3.1.1]: https://github.com/silarhi/caf-parser/compare/3.1.0...3.1.1

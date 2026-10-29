@@ -15,6 +15,7 @@ import Example from '../../../components/Example.astro'
   [parsing](/guides/parsing/#amounts) for the accepted formats)
 - a date, in a row or in the header, is invalid or out of range: `13 2021` or `31 02 2021` are rejected instead of
   being rolled over
+- PHP fails to match a metadata pattern, e.g. on `pcre.backtrack_limit`: the field is not silently left `null`
 
 ```php
 use Silarhi\Caf\Exceptions\ParseException;
@@ -39,6 +40,7 @@ getter returns `null` (see [parsing](/guides/parsing/#metadata)).
 | Invalid header date     | `"31 02 2021" date value could not be parsed, expected format is "d m Y"`          |
 | Invalid amount in a row | `CAF Row n°2 : "1.298.50" amount value could not be parsed`                        |
 | Invalid total           | `"1.298.50" amount value could not be parsed`                                      |
+| Metadata matching error | `Input CAF LA44 metadata could not be parsed: Backtrack limit exhausted`           |
 
 Row numbers count from 1 at the first row of the table, not from the top of the file. An empty table fails on row 1.
 

@@ -28,7 +28,8 @@ what comes before the first `:` and after the last one, which are ignored. Every
 number of parts, a blank line between two rows or an empty table throws `CAF Row n°<row> could not be parsed`, counting
 rows from 1 at the first row of the table. Blank lines before the first row or after the last one are ignored.
 
-Large files are fine: the table is located without regular expressions, and the test suite parses 10,000 rows.
+Large files are fine: the table is located without regular expressions, the metadata patterns take a time linear in
+the size of the content, and the test suite parses 10,000 rows.
 
 ## Dates
 
@@ -49,10 +50,12 @@ row, `31 02 2021` or `29 02 2021` in the header. See [error handling](/guides/er
 Amounts are returned as `float`, in the rows and in the total. Spaces, no-break spaces (U+00A0) and narrow no-break
 spaces (U+202F) are thousands separators. Then:
 
-- a single comma or dot is the decimal separator: `1298,50` and `1298.50` are both `1298.5`
+- decimals are optional, and are exactly 2 digits after a comma or a dot, as in LA44ZZ files: `272` is `272.0`,
+  `1298,50` and `1298.50` are both `1298.5`
 - with both, the last one is the decimal separator and the other one groups the digits by 3: French (`1.298,50`) and
   English (`1,298.50`) formats give the same result
 - a comma or dot repeated without decimals groups the digits by 3: `12.345.678` or `12,345,678`
+- at most 12 digits before the decimals: `999 999 999 999,99`
 
 | In the file     | Result       |
 | --------------- | ------------ |
@@ -67,13 +70,13 @@ spaces (U+202F) are thousands separators. Then:
 | `-12,50`        | `-12.5`      |
 
 :::note
-A single separator followed by 3 digits is ambiguous: as LA44ZZ files are French, `1,298` and `1.298` are read as
-decimals and both give `1.298`.
+A single separator followed by 3 digits is ambiguous: `1,298` and `1.298` are `1.298` in French, `1298` in English.
+Both throw a `ParseException` rather than risking a wrong value.
 :::
 
 Any other amount throws a `ParseException` instead of returning a wrong value: an empty amount, letters, the same
-separator for thousands and decimals (`1.298.50`), digits not grouped by 3 (`12.34,50`) or a trailing minus sign
-(`12,50-`). See [error handling](/guides/error-handling/#invalid-amount). A blank total (`TOTAL :      :`) is not an
+separator for thousands and decimals (`1.298.50`), digits not grouped by 3 (`12.34,50`), 1 or 3 decimals (`12,5`,
+`1298,505`), 13 digits or more before the decimals or a trailing minus sign (`12,50-`). See [error handling](/guides/error-handling/#invalid-amount). A blank total (`TOTAL :      :`) is not an
 error: `getTotalAmount()` returns `null`, like a missing one.
 
 ## Metadata

@@ -34,7 +34,7 @@ pnpm is the package manager (root for the git hooks, `docs/` for the site, each 
 
 ### Parser (`src/Parser/`)
 
-- `PaymentSlipParser`: Parses LA44ZZ file content: locates the table between its 121-dash borders with `strpos` (a regex hit `pcre.backtrack_limit` on large files), then extracts rows, dates (cached per `parse()` call, cloned per line), amounts, and metadata (CAF name/address, recipient info, bank details, totals)
+- `PaymentSlipParser`: Parses LA44ZZ file content: locates the table between its 121-dash borders with `strpos` (a regex hit `pcre.backtrack_limit` on large files), then extracts rows, dates (cached per `parse()` call, cloned per line), amounts (2 decimals, at most 12 digits before them), and metadata (CAF name/address, recipient info, bank details, totals). Metadata patterns stay on one line (`[ \t]`, not `\s`) and use possessive quantifiers so their cost stays linear (they used to backtrack for seconds on crafted headers); a `preg_match()` failure throws instead of leaving the field `null`
 
 ### Models (`src/Model/`)
 
