@@ -18,5 +18,6 @@ it when the content cannot be parsed:
 | `"<value>" date value could not be parsed, expected format is "d m Y"`                 | Invalid or out-of-range processing or payment date                  | `null`                      |
 | `CAF Row n°<row> : "<value>" amount value could not be parsed`                         | Malformed or empty gross, deduction or net amount in the row        | The amount `ParseException` |
 | `"<value>" amount value could not be parsed`                                           | Malformed total                                                     | `null`                      |
+| `Input CAF LA44 metadata could not be parsed: <error>`                                 | PHP failed to match a metadata pattern (`preg_last_error_msg()`)    | `null`                      |
 
 `<row>` counts from 1 at the first row of the table. See [error handling](/guides/error-handling/) for examples.

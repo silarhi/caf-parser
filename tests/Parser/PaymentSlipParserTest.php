@@ -16,6 +16,9 @@ namespace Silarhi\Caf\Tests\Parser;
 use function array_slice;
 
 use DateTimeImmutable;
+
+use function ini_get;
+
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Silarhi\Caf\Exceptions\ParseException;
@@ -323,9 +326,9 @@ final class PaymentSlipParserTest extends TestCase
         yield 'several comma thousands separators' => [' 12,345,678.90 ', 12345678.90];
         yield 'several dot thousands separators without decimals' => ['   12.345.678 ', 12345678.00];
         yield 'several comma thousands separators without decimals' => ['   12,345,678 ', 12345678.00];
-        yield 'single comma followed by 3 digits' => ['        1,298 ', 1.298];
-        yield 'single dot followed by 3 digits' => ['        1.298 ', 1.298];
         yield 'negative' => ['      -12,50 ', -12.50];
+        yield '12 digits' => [' 999999999999,99 ', 999999999999.99];
+        yield '12 digits with thousands separators' => [' 999.999.999.999,99 ', 999999999999.99];
     }
 
     #[DataProvider('provideInvalidAmounts')]
@@ -355,6 +358,14 @@ final class PaymentSlipParserTest extends TestCase
         yield 'thousands separator not grouping 3 digits' => ['    12.34,50 '];
         yield 'thousands separator after the decimal separator' => ['    1,298.5,0 '];
         yield 'trailing minus sign' => ['      12,50- '];
+        yield 'single comma followed by 3 digits' => ['        1,298 '];
+        yield 'single dot followed by 3 digits' => ['        1.298 '];
+        yield 'one decimal' => ['        12,5 '];
+        yield 'three decimals' => ['     1298,505 '];
+        yield 'three decimals with thousands separator' => ['    1.298,505 '];
+        yield '13 digits' => [' 9999999999999,00 '];
+        yield '13 digits with thousands separators' => [' 9.999.999.999.999,00 '];
+        yield 'infinite as a float' => [str_repeat('9', 400) . ',00'];
     }
 
     #[DataProvider('provideTotalAmounts')]
@@ -410,6 +421,8 @@ final class PaymentSlipParserTest extends TestCase
         yield 'same thousands and decimal separator' => ['       1.298.50', '"1.298.50" amount value could not be parsed'];
         yield 'letters' => ['            ABC', '"ABC" amount value could not be parsed'];
         yield 'trailing minus sign' => ['         12,50-', '"12,50-" amount value could not be parsed'];
+        yield 'single comma followed by 3 digits' => ['          1,298', '"1,298" amount value could not be parsed'];
+        yield 'infinite as a float' => [str_repeat('9', 400), sprintf('"%s" amount value could not be parsed', str_repeat('9', 400))];
     }
 
     #[DataProvider('provideBlankTotalAmounts')]
@@ -656,6 +669,77 @@ final class PaymentSlipParserTest extends TestCase
             ' : BORDEREAU DE PAIEMENT A.L.  DU     29 02 2021 :',
             '"29 02 2021" date value could not be parsed, expected format is "d m Y"',
         ];
+    }
+
+    public function testIbanStopsAtTheEndOfItsLine(): void
+    {
+        $parser = new PaymentSlipParser();
+        $result = $parser->parse(implode("\n", [
+            ' VB   CMCIFR2A      FR76 0000 0000 1111 2222 3333 444',
+            ' 12345 67890',
+            self::buildContent(
+                ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+            ),
+        ]));
+
+        self::assertSame('FR7600000000111122223333444', $result->getIban());
+    }
+
+    /**
+     * Each metadata pattern used to backtrack catastrophically on one of these headers (seconds to minutes, or
+     * pcre.backtrack_limit and a silently missing field): its cost must stay linear in the content size.
+     */
+    #[DataProvider('provideAdversarialHeaders')]
+    public function testAdversarialHeaderIsParsedQuickly(string $header): void
+    {
+        $content = self::buildContent(
+            ' :                      : 1234567 A : MME TEST ALPHA           : 01 2022 : 01 2022 :       42,00:       0,00:      42,00 :',
+        ) . $header;
+
+        $parser = new PaymentSlipParser();
+        $start = hrtime(true);
+        $result = $parser->parse($content);
+        $duration = (hrtime(true) - $start) / 1e9;
+
+        self::assertCount(1, $result->getLines());
+        self::assertLessThan(1.0, $duration, sprintf('parse() took %.2f s', $duration));
+    }
+
+    /**
+     * @return iterable<string, array{string}>
+     */
+    public static function provideAdversarialHeaders(): iterable
+    {
+        yield 'CAF name label repeated' => [rtrim(str_repeat("CAISSE D'ALLOCATIONS FAMILIALES\n", 12000), "\n")];
+        yield 'CAF name of single spaced words' => ["CAISSE D'ALLOCATIONS FAMILIALES\nDE " . str_repeat('A ', 150000) . "!\n"];
+        yield 'CAF street with a run of spaces' => ['X' . str_repeat(' ', 300000) . "Y\n NUMERO DE PRODUIT\n"];
+        yield 'recipient name with runs of spaces' => [str_repeat(str_repeat(' ', 20) . 'A' . str_repeat(' ', 100000) . "!\n", 3)];
+        yield 'recipient name after blank lines' => [str_repeat("\n", 300000)];
+        yield 'recipient address with runs of spaces' => [str_repeat('NM REFERENCE : 1 1  X' . str_repeat(' ', 100000) . "\n" . str_repeat(' ', 100000) . "!\n", 2)];
+        yield 'payment date label repeated on a line' => [str_repeat('BORDEREAU DE PAIEMENT DU ', 16000)];
+    }
+
+    /**
+     * A metadata pattern that fails (here on pcre.backtrack_limit) throws instead of leaving its field null.
+     */
+    public function testMetadataMatchingErrorThrows(): void
+    {
+        $content = file_get_contents(__DIR__ . '/../fixtures/LA44ZZ/caf_LA44.txt');
+        self::assertNotFalse($content);
+
+        $backtrackLimit = ini_get('pcre.backtrack_limit');
+        self::assertNotFalse($backtrackLimit);
+        ini_set('pcre.backtrack_limit', '1');
+
+        try {
+            $this->expectException(ParseException::class);
+            $this->expectExceptionMessage('Input CAF LA44 metadata could not be parsed: Backtrack limit exhausted');
+
+            $parser = new PaymentSlipParser();
+            $parser->parse($content);
+        } finally {
+            ini_set('pcre.backtrack_limit', $backtrackLimit);
+        }
     }
 
     public function testInvalidDateKeepsPreviousException(): void
