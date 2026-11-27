@@ -180,14 +180,8 @@ final class PaymentSlipParser
             $amount = str_replace($matches['thousands'], '', $amount);
         }
 
-        $value = (float) str_replace(',', '.', $amount);
-
-        // Unreachable with 12 digits at most, kept so that INF or NAN can never be returned as an amount
-        if (!is_finite($value)) {
-            throw new ParseException(sprintf('"%s" amount value could not be parsed', trim($input)));
-        }
-
-        return $value;
+        // AMOUNT_REGEX allows 12 digits at most, so the float is always finite
+        return (float) str_replace(',', '.', $amount);
     }
 
     private function getDateValue(string $input): DateTimeInterface
